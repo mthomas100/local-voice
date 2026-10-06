@@ -1,0 +1,3 @@
+# The mock server and the e2e harness (2026-10-05). Installed into MockServer/.venv by ../build.sh.
+websockets==17.2
+pytest==9.1.1

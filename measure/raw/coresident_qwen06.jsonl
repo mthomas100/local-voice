@@ -1,0 +1,6 @@
+{"event": "start", "active_gib": 0.0, "rss_gib": 0.066, "ts": "21:50:58"}
+{"event": "stt_loaded", "model": "mlx-community/parakeet-tdt-0.6b-v3", "load_s": 0.732, "active_gib": 2.375, "peak_gib": 2.375, "rss_gib": 2.445, "ts": "21:50:59"}
+{"event": "tts_loaded", "model": "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice", "load_s": 0.944, "active_gib": 4.76, "peak_gib": 4.762, "rss_gib": 4.894, "ts": "21:51:00"}
+{"event": "round", "run": 1, "stt_s": 0.038, "stt_text": "Could you check the weather for tomorrow afternoon?", "tts_ttfa_s": 0.124, "tts_total_s": 1.072, "tts_chunks": 11, "active_gib": 4.76, "peak_gib": 5.362, "cache_gib": 0.032, "rss_gib": 4.913, "ts": "21:51:01"}
+{"event": "round", "run": 2, "stt_s": 0.025, "stt_text": "Could you check the weather for tomorrow afternoon?", "tts_ttfa_s": 0.108, "tts_total_s": 2.909, "tts_chunks": 29, "active_gib": 4.76, "peak_gib": 5.362, "cache_gib": 0.032, "rss_gib": 4.913, "ts": "21:51:04"}
+{"event": "done", "active_gib": 4.76, "peak_gib": 5.362, "rss_gib": 4.913, "ts": "21:51:04"}

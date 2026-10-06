@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyLists-1.0.dtd">
+<!-- Used only when building with LV_PUSH_TO_TALK=YES (project.yml). Needs an explicit App ID with the Push to Talk
+     and Push Notifications capabilities; a wildcard profile cannot carry either. -->
+<plist version="1.0">
+<dict>
+	<key>com.apple.developer.push-to-talk</key>
+	<true/>
+	<key>aps-environment</key>
+	<string>development</string>
+</dict>
+</plist>

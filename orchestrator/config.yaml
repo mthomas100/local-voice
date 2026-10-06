@@ -1,0 +1,351 @@
+# config.yaml: the one place to choose the voice agent's models, voice, turn-taking and reach (written 2026-10-05).
+#
+# Every model sits behind an adapter named here (`impl: module:Class`, the pi `tts` skill's pattern), so swapping a
+# model is an edit to this file, never to code. Local overrides go in config.local.yaml next to it (gitignored),
+# merged key by key over this file. Spaces (what the agent can reach) live in spaces.yaml, the persona in persona.md.
+# Numbers marked "measured" come from ../measure/ (Apple M5 Max, 2026-10-04/05).
+version: 1
+
+# Runtime state: Pi sessions, latency JSONL, logs, the derived Pi agent dir, rendered notices. Gitignored.
+state_dir: ../state/orchestrator
+
+server:
+  port: 8770
+  # Addresses to bind, and nothing else "tailnet" is resolved at start with `tailscale ip -4`.
+  hosts: [127.0.0.1, tailnet]
+  # Tailscale logins allowed to connect from the tailnet; "self" = the login that owns this Mac's node.
+  # Loopback is always allowed. An empty list means loopback only.
+  allowed_logins: [self]
+  keepalive_s: 60            # PROTOCOL.md: either side closes after 60 s without any message
+  resume_window_s: 300       # a client reconnecting with the same device within 5 minutes resumes its session
+  browser:
+    enabled: true
+    port: 7860               # SmallWebRTC and the page at /, 127.0.0.1 only (its /start is unauthenticated)
+    working_sound: true      # the "working" loop while a tool runs; browser path only (note 04c §5)
+    # Pipecat's prebuilt client at /client. Off: it fetches Daily's call-machine bundle from c.daily.co when it loads
+    # (seen in the headless Chromium test, 2026-10-05); the project's own page at / fetches nothing from outside.
+    prebuilt: false
+
+hold:
+  gate: http://127.0.0.1:8090    # the GPU lock in front of llama-swap (~/repos/local-rig/docs/hold.md)
+  poll_s: 1.0                    # background refresh of /hold/status; a fresh check also runs before every turn
+  # Spoken while the gate is held or draining; rendered once at startup, because no speech model may run during
+  # a hold (a rule of this Mac since 2026-10-04).
+  busy_notice: "The Mac is busy with a render right now. I'll answer as soon as it's done."
+
+stt:
+  adapter: nemotron
+  adapters:
+    nemotron:
+      # Default ears: the live session returns the final transcript 53-54 ms after speech ends (measured).
+      impl: local_voice.engines.nemotron:NemotronStreamingEngine
+      kind: streaming
+      model: mlx-community/nemotron-3.5-asr-streaming-0.6b-8bit
+      max_decode_tokens: 8       # what mlx-audio's realtime server uses per step
+      # audio kept from before the VAD fired. Silero's start_secs is 0.2, but on a connection's first words its volume
+      # smoothing starts from zero and it fired late enough to drop "What is" (e2e, 2026-10-05): keep a whole second
+      preroll_s: 1.0
+      # silence fed before the session closes: with only the VAD's 0.2 s after the speech, the last word was dropped
+      # depending on chunk alignment ("...says moo?" -> "...says", e2e 2026-10-05); see services/stt.py TAIL_PAD_S
+      tail_pad_s: 0.3
+      # How long after the speech ends the turn strategy waits for the final transcript before it ends the turn with
+      # the text it already has (Pipecat's ttfs_p99_latency, measured from the end of speech; the VAD reports the stop
+      # 0.2 s late). Pipecat's 0.25 left 50 ms after the VAD stop, while our final arrives 23-73 ms after it (latency
+      # rows, 2026-10-05): a turn whose earlier pause already gave words could end without its last words. The final
+      # still ends the turn the moment it arrives; this only bounds the wait.
+      ttfs_p99_s: 0.5
+      # A segment that gave no words is decoded again with the next one when that starts within this many seconds:
+      # Nemotron returns nothing for a short word on its own ("Wait," before a pause was lost from "Wait, does it work
+      # in winter?", 2026-10-05). services/stt.py; 0 turns it off.
+      carry_s: 2.0
+    parakeet:
+      # Per-utterance alternative: 23 ms for a 2.48 s clip (measured), no live session in mlx-audio.
+      impl: local_voice.engines.parakeet:ParakeetEngine
+      kind: segmented
+      model: mlx-community/parakeet-tdt-0.6b-v3
+      trailing_silence_s: 0.3    # pad after the VAD stop so the last word is not clipped
+    fake:
+      impl: local_voice.engines.fakes:FakeTranscriber
+      kind: segmented
+      text: "what does my knowledge base say about the hold gate"
+
+tts:
+  adapter: qwen3
+  trim_leading_silence: true     # first-chunk energy gate; Qwen3-TTS 1.7B starts with ~0.08 s of silence (measured)
+  keep_before_onset_ms: 30
+  # Short sentences said with the next one (services/tts.py; the rule is speech_text.group_sentences'): a sentence of
+  # fewer than min_words words waits and goes into one generation with the sentence after it. In early live
+  # tests a reply opening with "Hey!" was generated alone, where Qwen3-TTS goes off, and every
+  # generation restarts the voice's pitch and pace. What waits is said alone at the end of the reply, before an
+  # acknowledgement, or hold_s after it with nothing behind it (the model's words before a tool call). Not measured
+  # yet: tools/tts_quality_bench.py's min_words 4 setting decides once the GPU is free; until then it stays off.
+  group:
+    min_words: 0                 # 0 = off: one generation per sentence, as before
+    hold_s: 0.5                  # costs that much at most, only to a short sentence nothing followed
+  adapters:
+    qwen3:
+      # Default voice: 103 ms to the first chunk at interval 0.32 (measured), honours instruct.
+      impl: local_voice.engines.qwen3_tts:Qwen3TTSEngine
+      model: Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice
+      voice: Ryan
+      lang_code: english
+      instruct: ""
+      streaming_interval: 0.32   # mlx-audio's default 2.0 s alone costs 0.3-0.4 s of first audio (measured)
+      # The model's own sampling, passed explicitly: repetition_penalty 1.0 ran 0.6B to the token cap with a minute
+      # of silence (measured); keep it >= 1.05.
+      temperature: 0.9
+      top_k: 50
+      top_p: 1.0
+      repetition_penalty: 1.05
+      # max_tokens per sentence, in 12.5 Hz codec frames: frames_per_char * len(text) + frames_min. English speech
+      # is about 1 frame per character, so this is ~2x headroom; a runaway costs one sentence, not a minute.
+      frames_per_char: 1.6
+      frames_min: 40
+    kokoro:
+      # Latency floor and fallback: ~75 ms per sentence, no streaming inside a segment (measured).
+      impl: local_voice.engines.kokoro:KokoroEngine
+      model: mlx-community/Kokoro-82M-bf16
+      voice: af_heart
+      lang_code: a
+      speed: 1.0
+      clause_chars: 90            # split a long sentence at clause punctuation so the first audio comes sooner
+    pocket:
+      # 18 ms to the first chunk (measured), leading silence 0.04-0.26 s.
+      impl: local_voice.engines.mlx_tts:MLXStreamingTTSEngine
+      model: mlx-community/pocket-tts
+      voice: null
+      streaming_interval: 0.32
+    marvis:
+      # 117 ms to the first chunk, no leading silence, voice cloning (measured).
+      impl: local_voice.engines.mlx_tts:MLXStreamingTTSEngine
+      model: Marvis-AI/marvis-tts-250m-v0.2-MLX-8bit
+      voice: null
+      streaming_interval: 0.32
+    fake:
+      impl: local_voice.engines.fakes:FakeSynthesizer
+      seconds_per_char: 0.06
+
+turn:
+  vad:                           # Silero in Pipecat 1.12 (CPU ONNX)
+    confidence: 0.7
+    # start_secs and min_volume below Pipecat's 0.2 and 0.6 (2026-10-05): with the defaults, speech onset to SPEAKING
+    # took 348 ms median (max 494) over 28 `say` interruptions in two voices, all over the 300 ms barge-in target
+    # (e2e: 384 ms). With 0.15 and 0.5: median 281 ms, max 397, 5 of 28 over (words starting with a fricative, such as
+    # "Stop": Silero scores only the voiced part), and no more false triggers on white or pink noise or on speech at
+    # -20 and -26 dB (that speech triggers with every setting: echo is the client's echo canceller's job).
+    start_secs: 0.15
+    stop_secs: 0.2               # the value Pipecat's turn tables assume
+    min_volume: 0.5
+  smart_turn:
+    enabled: true                # Smart Turn v3.2, CPU ONNX, bundled with Pipecat
+    # Silence after which the turn ends whatever Smart Turn says. 2.0 s, not 3.0 (2026-10-05, tools/turn_end_bench.py
+    # with the real Nemotron transcripts, ../state/turn-end/20261005-nemotron-carry/): Smart Turn calls 23 of 100
+    # finished `say` requests INCOMPLETE, and they wait for this; at 2.0 s their p90 is 2.22 s after the speech instead
+    # of 3.22, and no more of the 80 sentences with a 0.8 or 1.5 s pause spliced in are cut off (31 and 31 of 80 at
+    # both settings: those are Smart Turn's own COMPLETE verdicts). 1.5 s would cut 42 of the 1.5 s pauses. Pauses of
+    # 2-3 s inside a sentence were not measured: raise this if real use shows them cut off.
+    stop_secs: 2.0
+    # The final transcript as a second opinion (local_voice/turn_end.py, 2026-10-05). Both rules stay OFF: measured
+    # with the real Nemotron transcripts (tools/turn_end_bench.py --stt nemotron), the recogniser writes full stops and
+    # question marks on fragments ("Okay.", "And then.", "I want to know whether."), so ending on a finished-looking
+    # sentence (0.8 s) took finished requests' p90 from 3.22 s to 1.02 s but cut off 37 and 44 of 80 mid-sentence pauses
+    # instead of 31 and 31, and the veto on words that go on found almost no commas to act on (32 and 39). null = off.
+    words:
+      punctuation_stop_secs: null  # INCOMPLETE, but the words end a sentence: the turn ends this long after the VAD stop
+      veto_wait_secs: null         # COMPLETE, but the words go on (a comma, "the", "of"...): wait this long for the rest
+      veto_unpunctuated: false     # ... and also when the transcript has no punctuation at its end
+      # INCOMPLETE, but the words are a command the orchestrator answers itself, complete as said ("Back home.",
+      # "Act mode.", "Note this." alone, a bare "Yes." to a permission question; agent.is_command): the turn ends this
+      # long after the VAD stop. Smart Turn called "Back home.", "Just talk." and "Yes." INCOMPLETE in the M3 e2e
+      # (2026-10-05 16:22) and each waited 2 s. null = off.
+      command_stop_secs: 0.3
+      # COMPLETE, but the final stops on a filler or joining word ("And um.", "Like.", "Add milk and"; turn_end.py
+      # HOLD_WORDS): the turn waits for the silence fallback (stop_secs) instead. It can only keep a turn open, never end
+      # one early. Early live tests were full of them. A question ending on a preposition
+      # ("What does it look like?") is exempt. Tested model-free with a scripted Smart Turn; its cost and gain on
+      # spliced `say` speech are measured by tools/turn_end_bench.py --set fillers once Silero/Smart Turn may load.
+      hold_dangling: true
+      hold_except_questions: true
+  user_turn_stop_timeout_s: 5.0  # Pipecat's last resort when a turn produced no transcript
+  ptt_tail_s: 0.0                # extra wait after a push-to-talk "stop" (clients send ~100 ms of silence first)
+  barge_in:
+    # Open mic over protocol v1 (local_voice/bargein.py, 2026-10-05): stop sending the reply's audio at the first
+    # frame Silero scores as speech, send `interrupt` only when the VAD above confirms, and carry on where it stopped
+    # if it does not. tools/bargein_bench.py (110 interruptions in 5 voices, 260 ESC-50 recordings of coughs,
+    # sneezes, knocks, typing and the like): the pause comes at a median 72 ms (max 240) after speech starts, against
+    # 275 ms (max 860) for the interrupt; the controls cause 92 short pauses and the same 24 interruptions as without
+    # it. A shorter start_secs instead (0.1) interrupts at 215 ms but on 37 controls.
+    pause: true
+    cue_confidence: 0.5          # one Silero frame (32 ms) at or above this, at the VAD's min_volume, while a reply plays
+    cue_frames: 1
+    resume_after_s: 0.4          # unconfirmed by then (and no speech for 0.1 s): the reply carries on
+    max_pause_s: 1.5
+
+# The agent's own voice heard back (local_voice/echo_guard.py, local_voice/turn_start.py, 2026-10-05). In an early
+# live test (browser page, laptop speakers; tools/echo_turns.py counts such turns) about a quarter of the voice turns
+# were the agent's own words: the tail of one reply heard again 6-59 s after the replies ended, past any echo
+# canceller; two of them began while the agent was busy and cut it. Measured so far: the matching, on synthetic
+# replies and echoes (tests/test_echo_guard.py), and the rules, model-free (tests/test_turn_start.py). Not yet: the real recogniser on echo through real speakers. The planted-echo
+# bench gives those numbers (echo transcripts, false barge-ins, barge-in delay) once the GPU is free.
+echo:
+  # While the agent is busy (speaking, or its run in progress) a transcript that is mostly what it said within window_s
+  # is dropped and never barges in. While it is idle the words go on as the person's, marked for the model and the
+  # turn log: the person may have read a line aloud to ask about it.
+  guard: true
+  # A VAD start while the agent is busy waits for the words before it interrupts: echo, a fragment of its last
+  # sentences or a backchannel ("mm-hm") resume the reply, other words interrupt. A pending yes/no is never held.
+  # browser: the SmallWebRTC page only (where the echo was seen). The protocol v1 apps run Apple's voice
+  # processing and their reply pause already stops the audio ~72 ms into speech; holding would put their `interrupt`
+  # past M1 DoD 4's 300 ms (it waits for the first words). all: every open-mic entry. off: Pipecat's own turn start.
+  hold_for_words: browser
+  window_s: 300                  # what was said this long ago still counts (echoes in early tests came back 6-59 s later)
+  min_words: 3                   # echo: at least this many words aligned to the agent's speech ...
+  min_share: 0.6                 # ... and this share of its words (live echoes scored 0.90-1.00; a question quoting it 0.20)
+  fragment_sentences: 3          # 1-2 words, all in the last 3 sentences said: echo the reply pause cut short
+  max_hold_s: 1.5                # speech going on with no words and no echo for this long: interrupt
+  final_wait_s: 0.6              # the VAD stopped and nothing came within this (the final takes 0.23-0.25 s): no_words
+  # no words at all: resume (a cough, a laugh, a door: the reply goes on, as the reply pause already does when the VAD
+  # never confirms) or interrupt. Silence after real speech is rare: Nemotron transcribes it, or carries it (carry_s).
+  no_words: resume
+  # The agent still counts as busy this long after the bot stops speaking (the guard and the hold both): live echo lags
+  # the server's "Bot stopped speaking" by the client's playout and the room, and in the harness the echo of short
+  # replies began 137 ms after it, idle, and went through as a turn (the planted-echo bench, 2026-10-05). In the
+  # tail nothing plays, so a final that is not echo starts the turn even if it is "Yes." or "Go on." (turn_start.py).
+  tail_s: 1.0
+
+# Opt-in session recording (local_voice/recorder.py, 2026-10-05). Early live tests kept no audio, so their echo
+# (the agent's own words heard back 6-59 s after the replies) and voice faults (laughing, pitch swings, slurring)
+# could only be read from text. Recording keeps, per connection, mic.wav (16 kHz, what the transport
+# delivered), playback.wav (24 kHz, what the output sent), events.jsonl (VAD, transcripts before and after the guard,
+# turn decisions, bot speech, interruptions, each TTS generation) and meta.json, all on one clock, under
+# <dir>/<session id>/; tools/session_report.py reads them. Local only (state/ is gitignored); off unless set here or
+# `./run.sh --record`.
+record:
+  enabled: false
+  dir: ../state/recordings       # relative to this file
+  max_minutes: 30                # per connection; about 140 MB for 30 min of both tracks
+
+agent:
+  spaces_file: spaces.yaml
+  persona_file: persona.md
+  default_space: home
+  # Spoken by the orchestrator (not the model) when a tool call starts, so it cannot be skipped. Neutral
+  # wording: toolcall_start precedes any permission question (note 05c).
+  acks:
+    kb: "Let me look that up."
+    read: "Let me check."
+    grep: "Let me check."
+    find: "Let me look."
+    ls: "Let me look."
+    bash: "One moment."
+    default: "One moment."
+  labels:                        # protocol v1 `tool` labels for the clients' status line
+    kb: "searching your knowledge base"
+    read: "reading a file"
+    grep: "searching files"
+    find: "looking for files"
+    ls: "listing a folder"
+    bash: "running a command"
+    write: "writing a file"
+    edit: "editing a file"
+  loading_notice: "One moment, the model is waking up."   # llama-swap streams its load banner as reasoning (05d)
+  # Looking things up in conversation mode (voice_gate.ts, 2026-10-05): qwen38 once spent over 90 s in kb and grep on
+  # "how much does one cost?" with only "Let me look that up." spoken. After this many tool calls or seconds in one
+  # run, further calls are refused with an instruction to answer with what it has and offer to look further. Act mode
+  # has no budget. 0 turns a limit off.
+  tool_budget:
+    calls: 4
+    seconds: 20
+  progress:                      # said once when a tool chain has run this long with nothing said since the ack
+    after_s: 8.0
+    text: "Still looking."
+  no_answer: "I couldn't find that quickly. Ask me to keep looking if you want."   # tools ran, nothing was said
+  # Spoken length (spoken_cap.py, 2026-10-05). Before it, 12 open questions (tests/e2e/test_reply_timing.py, 17:00)
+  # got a median of 23.5 s of speech (p90 28.0, max 31.4; 9 of 12 over 15 s): two sentences of 25-35 words each,
+  # despite the persona's "one or two short sentences". A reply is said up to the last sentence that ends within
+  # `words` spoken words (a number counts by its digits; a first sentence longer than that ends at a clause break),
+  # then `offer` is said; the model's whole text stays in Pi's context and the next prompt says where the speech
+  # stopped. `long_words` when the person asked for something long ("a story", "in detail", "go on") or answered the
+  # offer with yes. 0 = no cap.
+  spoken_cap:
+    words: 35
+    long_words: 150
+    offer: "Want me to go on?"
+  saved: "Saved."                # said as soon as the orchestrator has saved a musing in a journal space
+  journal_join_s: 2.0            # speech this soon after a saved musing's turn end is the same musing, saved with it
+  settle_timeout_s: 10.0         # how long an aborted run may take to settle before a new prompt is refused
+  barge_in_finish:
+    # A barge-in while the model is still writing stops the speech but lets the run finish silently in Pi's context
+    # (agent.py), so the next request extends ds4's recurrent state. An aborted run makes ds4 replay the conversation
+    # from its nearest checkpoint: 9.0 s at 14k tokens, 27.6 s at 33k (2026-10-05). Measured the same day over 12
+    # conversational replies (tests/e2e/test_reply_timing.py): generation ends 0.2-0.84 s after the reply's audio
+    # starts, so only a barge-in in the first second lands mid-generation, and the run is done before the person
+    # has finished speaking. A tool call pending (or started while silent) still aborts.
+    enabled: true
+    max_chars: 400               # a reply already longer than this when barged in is a long one: abort at once
+    wait_s: 2.0                  # once the silent run is writing, the next prompt waits at most this long for it
+    # A silent run that has written nothing yet is waiting on the LLM, usually replaying a conversation after an
+    # earlier abort. It is never aborted then: ds4 deletes the checkpoint an aborted prefill started from (14:15:42),
+    # and the next request prefilled 15,738 tokens from zero. This only bounds a stuck run.
+    prefill_max_s: 60.0
+  # Approvals (PROTOCOL.md "Approvals", local_voice/approvals.py, 2026-10-05). A bare spoken
+  # question ("May I change your knowledge base? It starts with kb new. Yes or no?") said too little about what would
+  # happen, and silence refused it after 20 s. Now each call voice_gate.ts asks about goes to the client as a card (summary, exact command or path,
+  # preview, one button per choice) and is asked aloud with its summary; a plain yes runs it once, "yes, for this
+  # session" also allows the same scope for the rest of the session, a plain no or silence does not run it and the
+  # voice says what was not done, and any other reply is not approved and goes to the model as the person's words.
+  approvals:
+    card_clients: [iphone, mac, browser]   # hello.client values (and the browser page) that show the card
+    card_wait_s: 120.0           # PROTOCOL.md: at least 120 s while such a client is connected ...
+    reask_after_s: 60.0          # ... asking once more aloud at this point; 0 = never
+    voice_wait_s: 20.0           # no card: a question nobody can see waits this long (the old gate timeout)
+    # Spoken lines: {summary} is the gate's one-sentence summary ("create a new analysis page in your knowledge base
+    # titled ..."), {short} its verb phrase ("create that page"), {label} what a session grant covers.
+    ask: "I'd like to {summary}. Shall I?"
+    ask_again: "Shall I {short}? Yes or no."
+    denied: "Okay, I didn't {short}."
+    timed_out: "I didn't hear an answer, so I didn't {short}."
+    session: "Okay. For the rest of this session I won't ask again about {label}."
+    labels:                      # the card's buttons (PROTOCOL.md's wording)
+      allow_once: "Do it"
+      allow_session: "Allow {label} for the rest of this session"
+      deny: "Don't"
+
+pi:
+  bin: pi
+  # "derived": a Pi agent dir under state_dir, generated at start from models_source (the `local` provider only)
+  # with packages off; ~/.pi/agent is only read. A path uses that agent dir as is.
+  agent_dir: derived
+  models_source: ~/.pi/agent/models.json
+  max_tokens: 4096               # per model call; bounds a runaway spoken reply (05d recommendation)
+  skill_dirs: [~/.pi/agent/skills, ~/.agents/skills]   # where a space's named skills are looked up, after its root
+  extensions:                    # the explicit -e list (SPACES.md); unrelated extensions are never loaded
+    voice_gate: pi/voice_gate.ts
+    voice_mode: pi/voice_mode.ts
+    hold: ~/repos/local-rig/extensions/hold.ts
+    today: ~/repos/local-rig/extensions/today.ts
+    kb: ~/kb/adapters/pi/kb.ts   # only where a space lists the kb tool
+  # voice_gate.ts's own dialog timeout, a backstop only: the orchestrator answers every approval itself within
+  # agent.approvals' waits, and the gate gets at least the longest wait plus 15 s (spaces.py)
+  confirm_timeout_ms: 20000
+  env: {}                        # extra environment for every Pi child (tests set PI_CODING_AGENT_DIR, KB_HOME here)
+
+# How it was said (../tone/README.md, M5): one bracketed delivery hint per voice turn for the model, never in the
+# person's words, the turn log's user_text, Atlas or the captions. Off by default; `log` measures and grows the
+# baseline without hints (a week of measuring), `on` also gives the model the hint. Turning it on
+# needs the tone package's dependencies in this venv (Parselmouth): the hook is imported from ../tone only then, and a
+# failed import leaves it off with an error in the log.
+tone:
+  mode: "off"
+  package_dir: ../tone
+
+latency:
+  log: true                      # one JSON line per turn in <state_dir>/latency/<date>.jsonl
+
+brain:                           # the background brain's interface (brain/TURN_LOG.md, v1); relative to this file
+  turn_log_dir: ../state/turns   # §1: one JSON line per completed user turn, <local day>.jsonl, append only
+  state_dir: ../state/brain      # §2: its spoken digests wait in <state_dir>/outbox/<day>.json
+  outbox_module: ../brain/local_voice_brain/outbox.py   # the brain's own reader, imported by path, not copied
+  speak_digests: true            # say them at the first idle moment after a new session's first completed turn
+  digest_idle_s: 1.0             # how long nothing must happen before a digest is said
+  heard_wait_s: 1.5              # an interrupted turn waits this long for the client's played_ms before it is logged

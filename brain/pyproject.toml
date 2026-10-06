@@ -1,0 +1,24 @@
+[project]
+name = "local-voice-brain"
+version = "0.1.0"
+description = "local-voice's background brain (M4): idle-gated reflection over the day's voice sessions"
+requires-python = ">=3.12,<3.13"
+# Standard library only, on purpose: launchd runs this every 30 minutes, and a job with no dependencies has no venv to
+# break. The venv (uv sync) exists for pytest.
+dependencies = []
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-p no:cacheprovider"
+markers = [
+    "needs_pi: runs a real `pi --mode json` against the stub LLM",
+    "needs_kb: works on a git clone of ~/kb",
+    "needs_atlas: works on a git clone of the Atlas repo",
+]

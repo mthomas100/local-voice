@@ -1,0 +1,8 @@
+# Turn-end bench (orchestrator/tools/turn_end_bench.py, CPU only), 2026-10-05.
+# 100 finished requests (20 sentences x 5 macOS `say` voices) and 80 sentences with 0.8 s or 1.5 s of silence
+# spliced in at a word boundary. Stand-in transcripts (the words as written). Copied from the project's status notes.
+rule,finished_median_s,finished_p90_s,finished_max_s,finished_waiting_over_1s_of_100,cut_off_at_0.8s_pause_of_80,cut_off_at_1.5s_pause_of_80
+Smart Turn + 3 s fallback,0.23,3.22,3.25,27,32,32
++ early end 0.8 s on a finished sentence,0.23,1.02,1.05,20,35,35
++ veto 1.5 s on words that go on,0.23,1.02,1.05,20,16,25
++ veto 3.0 s,0.23,1.02,1.05,20,16,16

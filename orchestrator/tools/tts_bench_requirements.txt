@@ -1,0 +1,16 @@
+# The voice-quality bench's CPU scorers (tools/tts_bench_scorers.py), in their own venv so torch and transformers
+# never enter the orchestrator's .venv (two agents share it; its pins are pyproject.toml's). Built 2026-10-05:
+#   cd orchestrator && uv venv --python 3.12 tools/.venv-bench && \
+#     uv pip install --python tools/.venv-bench/bin/python -r tools/tts_bench_requirements.txt
+# `.venv-bench` matches the root .gitignore's `.venv-*/`. torch runs on the CPU only here (never "mps").
+# Pinned to what uv resolved that day. torchaudio stops at 2.11.0 on PyPI and declares no torch pin; the scorers use
+# only torchaudio.functional.resample (UTMOS22's own resampling), which works with torch 2.14.1 (checked 2026-10-05).
+numpy==2.5.3
+soundfile==0.14.0
+soxr==1.1.0
+praat-parselmouth==0.4.7
+torch==2.14.1
+torchaudio==2.11.0
+transformers==5.18.0
+huggingface_hub==1.33.0
+safetensors==0.8.0

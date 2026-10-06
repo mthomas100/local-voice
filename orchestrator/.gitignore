@@ -1,0 +1,3 @@
+# orchestrator only: local overrides of config.yaml, and anything the e2e runs leave here by mistake (2026-10-05)
+config.local.yaml
+.e2e/

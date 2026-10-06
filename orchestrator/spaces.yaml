@@ -1,0 +1,58 @@
+# spaces.yaml: what the voice agent can reach, per domain (SPACES.md, frozen 2026-10-05). The orchestrator derives
+# every Pi child (cwd, --tools, --skill, -e, env for voice_gate.ts), the trigger router and the dashboard from this
+# file alone. Paths: ~ expands; a space's root must exist. Skills: `auto` (Pi discovers from the root and the global
+# skill dirs) or a list of names (spawned with --no-skills and one --skill <dir> each).
+version: 1
+defaults:
+  model: local/qwen38            # fast MoE: the live conversation (05d: the live brain)
+  deep_model: local/qwen27-262k  # slow dense model: long do-it-for-me tasks and reflection (needs the qwen chat-template compat)
+  thinking: off                  # reasoning off on the live path (it eats the reply budget; ds4 thinks HIGH without it)
+  mode: conversation             # conversation | act
+  tier: ask                      # readonly | ask | trusted
+  voice: ryan                    # key into the TTS config
+spaces:
+  home:
+    root: ~
+    description: "your Mac"
+    triggers: ["home", "back home", "my mac", "the computer"]
+    skills: [wiki-query, web-research, chrome-read, reddit, x]
+    tools: [read, grep, find, ls, kb]
+    act_tools: [bash, write, edit]
+    tier: ask
+  atlas:
+    root: ~/atlas                # an Atlas-style markdown journal repo with an atlas.py CLI; point it at your own
+    description: "your atlas journal"
+    triggers: ["atlas", "journal", "my journal", "life wiki", "my notes"]
+    skills: auto                 # the repo's own .agents/skills: atlas-journal, atlas-process, atlas-ask, atlas-review, atlas-file
+    tools: [read, grep, find, ls, bash]        # bash in conversation mode too: capture runs through atlas.py
+    act_tools: [write, edit]                   # agent pages go to inbox/; wiki/ only on "file that"
+    tier: trusted
+    bash_allow:                  # argv prefixes, not shell globs (SPACES.md "bash_allow")
+      - ["python3", "atlas.py", "capture"]
+      - ["python3", "atlas.py", "queue"]
+      - ["python3", "atlas.py", "context"]
+      - ["python3", "atlas.py", "show"]
+      - ["python3", "atlas.py", "meta"]
+      - ["python3", "atlas.py", "stamp"]
+      - ["python3", "atlas.py", "answer"]
+      - ["python3", "atlas.py", "start"]
+      - ["python3", "atlas.py", "finish"]
+      - ["git", "status"]
+      - ["git", "log"]
+    rules:                       # appended to the persona in this space
+      - "When the person muses or says note this, save their exact words first with python3 atlas.py capture --via voice, then reply. When a message says their words are already saved, do not save them again."
+      - "Never edit, tidy or rewrite their words. Your own pages go to inbox/; wiki/ only when they say file that."
+  kb:
+    root: ~/kb
+    description: "the knowledge base"
+    triggers: ["knowledge base", "the kb", "the wiki"]
+    skills: [wiki-query]
+    tools: [read, grep, find, ls, kb]
+    tier: readonly
+  voice:
+    root: ~/repos/local-voice
+    description: "this voice project"
+    triggers: ["voice project", "local voice"]
+    skills: auto
+    tools: [read, grep, find, ls]
+    tier: readonly

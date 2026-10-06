@@ -1,0 +1,12 @@
+{"event": "silero_load", "load_s": 0.483, "active_gib": 0.003, "ts": "08:46:48"}
+{"event": "silero_stream", "clip_s": 9.273, "chunk_samples": 512, "chunk_ms": 32.0, "chunks": 289, "feed_latency_s": {"p50": 0.0004, "p95": 0.0007, "max": 0.0015, "n": 289}, "speech_chunks": 264, "first_speech_s": 0.032, "last_speech_s": 9.088, "peak_gib": 0.003, "ts": "08:46:48"}
+{"event": "silero_whole_clip", "predict_proba_s": {"p50": 0.0265, "p95": 0.0289, "max": 0.0295, "n": 5}, "get_speech_timestamps_s": 0.0264, "timestamps": [{"start": 32, "end": 3.422}, {"start": 3.554, "end": 6.014}, {"start": 6.146, "end": 7.294}, {"start": 7.426, "end": 9.15}], "ts": "08:46:48"}
+{"event": "smart_turn_load", "load_s": 0.011, "active_gib": 0.033, "max_audio_s": 8, "ts": "08:46:48"}
+{"event": "smart_turn", "clip_s": 9.273, "full_clip": {"prediction": 0, "probability": 0.2151, "latency_s": {"p50": 0.0017, "p95": 0.0047, "max": 0.0048, "n": 10}}, "cut_at_s": 4.173, "cut_clip": {"prediction": 0, "probability": 0.0075, "latency_s": {"p50": 0.0015, "p95": 0.0017, "max": 0.0017, "n": 5}}, "peak_gib": 0.092, "ts": "08:46:48"}
+{"event": "done", "active_gib_both": 0.033, "peak_gib": 0.092, "rss_gib": 0.141, "ts": "08:46:48"}
+{"event": "silero_load", "load_s": 0.468, "active_gib": 0.002, "ts": "08:46:49"}
+{"event": "silero_stream", "clip_s": 2.483, "chunk_samples": 512, "chunk_ms": 32.0, "chunks": 77, "feed_latency_s": {"p50": 0.0004, "p95": 0.0009, "max": 0.0011, "n": 77}, "speech_chunks": 71, "first_speech_s": 0.032, "last_speech_s": 2.304, "peak_gib": 0.002, "ts": "08:46:49"}
+{"event": "silero_whole_clip", "predict_proba_s": {"p50": 0.0076, "p95": 0.0091, "max": 0.0092, "n": 5}, "get_speech_timestamps_s": 0.0073, "timestamps": [{"start": 32, "end": 2.334}], "ts": "08:46:49"}
+{"event": "smart_turn_load", "load_s": 0.003, "active_gib": 0.032, "max_audio_s": 8, "ts": "08:46:49"}
+{"event": "smart_turn", "clip_s": 2.483, "full_clip": {"prediction": 1, "probability": 0.9889, "latency_s": {"p50": 0.0013, "p95": 0.0014, "max": 0.0014, "n": 10}}, "cut_at_s": 1.117, "cut_clip": {"prediction": 0, "probability": 0.0102, "latency_s": {"p50": 0.0013, "p95": 0.0014, "max": 0.0014, "n": 5}}, "peak_gib": 0.091, "ts": "08:46:49"}
+{"event": "done", "active_gib_both": 0.032, "peak_gib": 0.091, "rss_gib": 0.141, "ts": "08:46:49"}

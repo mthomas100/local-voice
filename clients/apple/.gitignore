@@ -1,0 +1,8 @@
+# Derived: SwiftPM's build tree and the Xcode project XcodeGen writes from project.yml (2026-10-05).
+.build/
+*.xcodeproj/
+# The mock server's uv virtualenv and per-run evidence.
+MockServer/.venv/
+MockServer/runs/
+# XcodeGen output (project.yml is the source)
+Generated/

@@ -1,0 +1,37 @@
+# weights, venvs, caches, logs and run state stay out of git
+.venv/
+venv/
+__pycache__/
+*.pyc
+models/
+weights/
+*.gguf
+*.safetensors
+*.npz
+*.bin
+*.pt
+*.onnx
+*.mlmodelc/
+.cache/
+logs/
+*.log
+state/
+run/
+*.wav
+*.aiff
+*.mp3
+.DS_Store
+# Xcode / Swift
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+.swiftpm/
+Package.resolved
+node_modules/
+.pytest_cache/
+# measure/bench: venvs built by setup.sh and per-run outputs of run_remaining.sh (2026-10-05)
+.venv-*/
+measure/bench/results/
+# the bench log written by measure/bench/log.sh (local run detail)
+measure/raw/09-measurements-log.md

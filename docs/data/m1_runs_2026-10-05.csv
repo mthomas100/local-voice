@@ -1,0 +1,12 @@
+# Median end-of-speech to first-audio (warm turns, client-measured) for each full M1 e2e run on 2026-10-05.
+# Synthetic `say` prompts. Copied from the project's status notes. At 13:02 the LLM server's launchd job moved from
+# ProcessType Background to Interactive with a 250 ms GPU-queue keepalive (see README, "What moved the number").
+run_start,median_ms,note
+11:06,2432,first e2e run
+12:01,4771,shakedown under heavy CPU load (load1 ~8-10)
+12:25,2900,M1 first try
+12:46,4127,all orchestrator fixes in; LLM first token 2.7-6.8 s after idle
+13:08,844,after the LLM server scheduling fix
+13:59,879,
+14:13,879,
+14:24,874,run reported as M1

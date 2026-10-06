@@ -1,0 +1,267 @@
+<!doctype html>
+<!--
+  The voice agent's own browser page (2026-10-05). Plain WebRTC against the SmallWebRTC routes of browser.py, so the
+  page fetches nothing from outside this Mac: Pipecat's prebuilt client loads Daily's call-machine bundle from
+  c.daily.co when it starts (seen in the headless Chromium test), which a fully local agent should not do.
+  Protocol (pipecat 1.12.0 smallwebrtc/connection.py): transceiver 0 = audio, 1 = video, both sendrecv; a data channel
+  from the client carrying "ping" keepalives (the server counts the client gone after 3 s without one) and RTVI JSON;
+  POST /api/offer {sdp, type, pc_id, restart_pc} answers {sdp, type, pc_id}. No iceServers: host candidates only.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Local Voice</title>
+<style>
+  :root { --bg: #f6f5f2; --fg: #1d1d1b; --muted: #6d6a64; --card: #ffffff; --line: #e3e0d9; --accent: #2f6f5e;
+          --user: #e9f1ee; --bot: #f2efe9; --warn: #9a5b13; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #161615; --fg: #ecebe7; --muted: #9b978f; --card: #1f1f1d; --line: #33322f; --accent: #6fb8a3;
+            --user: #1f2c28; --bot: #2a2824; --warn: #e0a35a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+         background: var(--bg); color: var(--fg); }
+  main { max-width: 720px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+  .bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; background: var(--card);
+         border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  button { font: inherit; border: 0; border-radius: 9px; padding: 8px 16px; background: var(--accent); color: #fff;
+           cursor: pointer; }
+  button.off { background: var(--muted); }
+  .pill { font-size: 13px; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+  .pill b { color: var(--fg); font-weight: 600; }
+  .held b { color: var(--warn); }
+  #log { margin-top: 18px; display: flex; flex-direction: column; gap: 8px; }
+  .msg { padding: 9px 12px; border-radius: 10px; max-width: 85%; white-space: pre-wrap; }
+  .user { background: var(--user); align-self: flex-end; }
+  .bot { background: var(--bot); align-self: flex-start; }
+  .note { color: var(--muted); font-size: 13px; align-self: center; }
+  /* The approval card (PROTOCOL.md "Approvals"): what will happen, exactly, and one button per choice. */
+  #cards { position: sticky; top: 0; z-index: 1; }
+  .card { margin-top: 14px; background: var(--card); border: 2px solid var(--accent); border-radius: 12px;
+          padding: 12px 14px; box-shadow: 0 2px 10px rgba(0, 0, 0, .08); }
+  .card h2 { font-size: 16px; font-weight: 600; margin: 0 0 8px; }
+  .card .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+  .tag { font-size: 12px; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+  .tag.danger { color: var(--warn); border-color: var(--warn); }
+  .card .label { font-size: 12px; color: var(--muted); margin: 8px 0 2px; }
+  .card .mono, .card pre { font: 12.5px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--bot);
+                           border-radius: 8px; padding: 6px 8px; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .card pre { max-height: 260px; overflow: auto; }
+  .card .add { color: #2f7d4f; } .card .del { color: #b23b2a; } .card .hunk { color: var(--muted); }
+  .card .choices { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .card button.allow_session { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  .card button.deny { background: transparent; color: var(--fg); border: 1px solid var(--line); }
+  .card .wait { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .card.closed { border-color: var(--line); box-shadow: none; opacity: .7; }
+  .card.closed .choices { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Local Voice</h1>
+  <p class="sub">Talk to your agent. Everything runs on this Mac; headphones avoid the agent hearing itself.</p>
+  <div class="bar">
+    <button id="connect">Connect</button>
+    <span class="pill">state <b id="state">idle</b></span>
+    <span class="pill">space <b id="space">-</b></span>
+    <span class="pill" id="holdpill">GPU <b id="hold">-</b></span>
+    <span class="pill">doing <b id="tool">nothing</b></span>
+  </div>
+  <div id="cards"></div>
+  <div id="log"></div>
+  <audio id="bot" autoplay></audio>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+let pc = null, dc = null, ping = null, mic = null, lastBot = null;
+
+function note(text, cls = "note") {
+  const d = document.createElement("div");
+  d.className = "msg " + cls;
+  d.textContent = text;
+  $("log").appendChild(d);
+  d.scrollIntoView({ block: "end" });
+  return d;
+}
+
+async function refreshStatus() {
+  try {
+    const s = await (await fetch("/v1/status")).json();
+    $("space").textContent = s.space || "-";
+    $("hold").textContent = (s.hold && s.hold.phase) || "-";
+    $("holdpill").className = "pill" + (s.hold && s.hold.phase !== "open" && s.hold.phase !== "absent" ? " held" : "");
+    if (!pc) $("state").textContent = s.state || "idle";
+  } catch (e) { /* the page outlives a restarting server */ }
+}
+setInterval(refreshStatus, 2000);
+refreshStatus();
+
+// Captions: one bubble per reply, each sentence once, as it was said. Pipecat 1.12's RTVI observer sends every sentence
+// up to three times: bot-transcription (from the model's text), bot-output before synthesis (spoken: false) and
+// bot-output once it is synthesized (spoken: true). The page showed all three, so the captions read "A. A. B. C. A. B.
+// B. C. C." although each sentence was generated once (an early live test, 2026-10-05). Only the spoken copy is
+// shown; a reply's bubble ends when the person speaks, not at each pause between its sentences.
+function caption(text) {
+  if (!lastBot) lastBot = note("", "msg bot");
+  lastBot.textContent = (lastBot.textContent + " " + text).trim();
+}
+
+// The approval card (PROTOCOL.md "Approvals"). An early version asked aloud "May I change your knowledge base?
+// It starts with kb new. Yes or no?" with nothing on screen, which said too little (2026-10-05). The card
+// says what will happen (the summary), exactly (the command or the file, where, and the text or diff), and offers one
+// button per choice; the voice asks the same question, so either answers it. Text from the server is only ever set as
+// textContent. A choice goes back as an RTVI client message {t: "confirm_response", d: {id, choice, confirmed}}.
+const cards = {};
+const CANCELLED = { answered: "Answered by voice.", timeout: "No answer, so it was not done.",
+                    overtaken: "Withdrawn: the request was interrupted." };
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+
+function preview(text) {
+  const pre = el("pre");
+  const diff = /^--- .*\n\+\+\+ /.test(text);
+  for (const line of text.replace(/\n$/, "").split("\n")) {
+    const cls = !diff ? "" : line.startsWith("@@") ? "hunk" : line.startsWith("+") ? "add" : line.startsWith("-") ? "del" : "";
+    pre.appendChild(el("span", cls, line + "\n"));
+  }
+  return pre;
+}
+
+function showApproval(s) {
+  const a = s.action || {};
+  const card = el("div", "card");
+  card.dataset.id = s.id;
+  card.appendChild(el("h2", "", s.summary || s.title || "May I go ahead?"));
+  const tags = el("div", "tags");
+  for (const v of [a.tool, a.effect, a.space && "space " + a.space, a.mode && a.mode + " mode"]) {
+    if (v) tags.appendChild(el("span", "tag" + (v === "delete" || v === "network" ? " danger" : ""), v));
+  }
+  card.appendChild(tags);
+  const block = (label, node) => { card.appendChild(el("div", "label", label)); card.appendChild(node); };
+  if (a.command) block("Command", el("div", "mono", a.command));
+  if (a.path) block("File", el("div", "mono", a.path));
+  if (a.cwd && a.command) block("In folder", el("div", "mono", a.cwd));   // a file's own path already says where
+  if (!a.command && !a.path && s.message) block("Details", el("div", "mono", s.message));
+  if (a.preview) block(/^--- .*\n\+\+\+ /.test(a.preview) ? "Changes" : "Text", preview(a.preview));
+  const choices = el("div", "choices");
+  for (const c of (s.choices && s.choices.length ? s.choices : [{ id: "allow_once", label: "Do it" }, { id: "deny", label: "Don't" }])) {
+    const b = el("button", c.id, c.label);
+    b.onclick = () => answerApproval(s.id, c.id, c.label);
+    choices.appendChild(b);
+  }
+  card.appendChild(choices);
+  const wait = el("div", "wait");
+  card.appendChild(wait);
+  const until = Date.now() + (s.timeout_ms || 120000);
+  const tick = () => {
+    const left = Math.max(0, Math.round((until - Date.now()) / 1000));
+    wait.textContent = `Waiting for your answer: tap a button, or say yes or no (${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")} left).`;
+  };
+  tick();
+  cards[s.id] = { card, wait, timer: setInterval(tick, 1000) };
+  $("cards").appendChild(card);
+  card.scrollIntoView({ block: "nearest" });
+}
+
+function closeApproval(id, text) {
+  const c = cards[id];
+  if (!c) return;
+  delete cards[id];
+  clearInterval(c.timer);
+  c.card.classList.add("closed");
+  c.wait.textContent = text;
+  $("log").appendChild(c.card);          // kept in the conversation, below what came before it
+  c.card.scrollIntoView({ block: "end" });
+}
+
+function answerApproval(id, choice, label) {
+  if (dc && dc.readyState === "open") {
+    dc.send(JSON.stringify({ id: crypto.randomUUID(), label: "rtvi-ai", type: "client-message",
+                             data: { t: "confirm_response", d: { id, choice, confirmed: choice !== "deny" } } }));
+  }
+  closeApproval(id, "You chose: " + label);
+}
+
+function onRtvi(m) {
+  if (m.label !== "rtvi-ai") return;
+  const d = m.data || {};
+  switch (m.type) {
+    case "user-transcription":
+      if (d.final) { lastBot = null; note(d.text, "msg user"); }
+      break;
+    case "bot-output":
+      if (d.spoken === true && d.text) caption(d.text);
+      break;
+    case "bot-started-speaking": $("state").textContent = "speaking"; break;
+    case "bot-stopped-speaking": $("state").textContent = "listening"; break;
+    case "user-started-speaking": $("state").textContent = "listening"; lastBot = null; break;
+    case "user-stopped-speaking": $("state").textContent = "thinking"; break;
+    case "server-message": {
+      const s = d;
+      if (s.t === "tool") $("tool").textContent = s.phase === "start" ? (s.label || s.name) : "nothing";
+      else if (s.t === "state") $("state").textContent = s.v;
+      else if (s.t === "hold") { $("hold").textContent = s.phase; refreshStatus(); }
+      else if (s.t === "confirm_request") showApproval(s);
+      else if (s.t === "confirm_cancel") closeApproval(s.id, CANCELLED[s.why] || "Closed.");
+      break;
+    }
+  }
+}
+
+async function connect() {
+  mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true,
+                                                             autoGainControl: true } });
+  pc = new RTCPeerConnection({ iceServers: [] });
+  pc.addTransceiver(mic.getAudioTracks()[0], { direction: "sendrecv" });
+  pc.addTransceiver("video", { direction: "sendrecv" });
+  pc.ontrack = (e) => { if (e.track.kind === "audio") $("bot").srcObject = new MediaStream([e.track]); };
+  dc = pc.createDataChannel("chat", { ordered: true });
+  dc.onopen = () => {
+    dc.send(JSON.stringify({ id: crypto.randomUUID(), label: "rtvi-ai", type: "client-ready",
+                             data: { version: "1.0.0", about: { library: "local-voice-page" } } }));
+    ping = setInterval(() => dc.readyState === "open" && dc.send("ping-" + Date.now()), 1000);
+  };
+  dc.onmessage = (e) => { try { onRtvi(JSON.parse(e.data)); } catch (err) { /* keepalive or non-JSON */ } };
+  pc.onconnectionstatechange = () => {
+    if (["failed", "closed", "disconnected"].includes(pc.connectionState)) disconnect();
+  };
+  await pc.setLocalDescription(await pc.createOffer());
+  await new Promise((res) => {
+    if (pc.iceGatheringState === "complete") return res();
+    pc.addEventListener("icegatheringstatechange", () => pc.iceGatheringState === "complete" && res());
+    setTimeout(res, 2000);
+  });
+  const r = await fetch("/api/offer", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sdp: pc.localDescription.sdp, type: pc.localDescription.type, pc_id: null,
+                           restart_pc: false }) });
+  const answer = await r.json();
+  await pc.setRemoteDescription({ sdp: answer.sdp, type: answer.type });
+  $("connect").textContent = "Disconnect";
+  $("connect").className = "off";
+  $("state").textContent = "listening";
+  note("Connected. Say something.");
+}
+
+function disconnect() {
+  for (const id of Object.keys(cards)) closeApproval(id, "Disconnected: not answered.");
+  if (ping) clearInterval(ping);
+  if (pc) pc.close();
+  if (mic) mic.getTracks().forEach((t) => t.stop());
+  pc = dc = ping = mic = null;
+  $("connect").textContent = "Connect";
+  $("connect").className = "";
+  $("state").textContent = "idle";
+}
+
+$("connect").onclick = () => (pc ? disconnect() : connect().catch((e) => { note("Could not connect: " + e); disconnect(); }));
+</script>
+</body>
+</html>

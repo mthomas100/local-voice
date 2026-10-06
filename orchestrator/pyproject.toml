@@ -1,0 +1,55 @@
+[project]
+name = "local-voice-orchestrator"
+version = "0.1.0"
+description = "The local voice agent's orchestrator: Pipecat pipeline, MLX speech adapters, the Pi RPC bridge, protocol v1"
+requires-python = ">=3.12,<3.13"
+# Pins (2026-10-05): pipecat-ai 1.12.0, mlx-audio 0.5.7, Python 3.12.
+dependencies = [
+    "pipecat-ai[webrtc,runner,silero]==1.12.0",
+    "mlx-audio[stt,tts]==0.5.7",
+    "pyyaml>=6",
+    "httpx>=0.27",
+    "soundfile>=0.12",
+    "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+# Kokoro's G2P (measure/bench/requirements-kokoro.txt): misaki is in none of mlx-audio's extras, and
+# misaki[en] would pull torch for nothing; en_core_web_sm is installed from its wheel because spaCy's own
+# download falls back to a bare `uv pip install` that finds no venv.
+kokoro = [
+    "misaki==0.9.4",
+    "phonemizer>=3.3",
+    "espeakng-loader>=0.2.4",
+    "num2words>=0.5.14",
+    "spacy>=3.8,<3.9",
+    "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    # the browser test drives the Chromium build already cached in ~/Library/Caches/ms-playwright (1243 = 1.63.0)
+    "playwright==1.63.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["local_voice"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+addopts = "-p no:cacheprovider -m 'not e2e'"
+markers = [
+    "needs_pi: starts a real pi --mode rpc child against the stub LLM",
+    "e2e: needs real models and the GPU (gpu_clear.sh must pass); never collected by default",
+]

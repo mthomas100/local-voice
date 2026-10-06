@@ -1,0 +1,7 @@
+# Barge-in bench (orchestrator/tools/bargein_bench.py), 2026-10-05, silence background.
+# 110 `say` interruptions (22 phrases x 5 voices), 260 ESC-50 recordings scaled to speech level, 50 backchannels.
+# Copied from the project's status notes. "current" = the shipped interrupt setting; the shipped design also pauses on one frame.
+detector,interrupt_median_ms,interrupt_p90_ms,interrupt_max_ms,within_300ms,of,esc50_false_interrupts_of_260
+Silero 0.7 start 0.15 s (shipped interrupt),275,374,860,64,108,24
+Silero 0.7 start 0.1 s,215,305,800,93,109,37
+Silero 0.7 start 0.064 s,175,265,440,105,109,43

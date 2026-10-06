@@ -1,0 +1,59 @@
+# Phrasings for the router (local_voice/router.py), measured by tools/router_bench.py and checked by tests/test_router.py
+# (2026-10-05). A rambling request after a request phrase ("I want you to go to my journal. And uh. ...") used not to
+# switch, so the home agent browsed the journal folder and said writing needs act mode. Spaces are the real spaces.yaml
+# (home, atlas, kb, voice). `from` is the space the person is in (default home); `want` is the space the router should
+# switch to, `ask` when it should ask which, or `none` when the words are not a switch (planted negatives: they go to the
+# model, which has the space_switch tool for what is meant but not said as a switch). `rest`: the words that should go on
+# to the new space as its first prompt ("" when the switch was all that was said).
+switches:
+  - {say: "Go to my Atlas.", want: atlas, rest: ""}
+  - {say: "Open my atlas.", want: atlas, rest: ""}
+  - {say: "Take me to the journal.", want: atlas, rest: ""}
+  - {say: "I want you to go to my journal. And uh. Just put a Um. So. I think like a short note that just. Call the plumber on Monday.",
+     want: atlas, rest: "Just put a Um. So. I think like a short note that just. Call the plumber on Monday."}
+  - {say: "I'd like you to go to my atlas.", want: atlas, rest: ""}
+  - {say: "Can you open my journal?", want: atlas, rest: ""}
+  - {say: "Could you take me to my journal please", want: atlas, rest: ""}
+  - {say: "Let's go to the knowledge base.", want: kb, rest: ""}
+  - {say: "Switch over to the wiki.", want: kb, rest: ""}
+  - {say: "Head over to the voice project.", want: voice, rest: ""}
+  - {say: "Go back home.", from: atlas, want: home, rest: ""}
+  - {say: "Take me home.", from: atlas, want: home, rest: ""}
+  - {say: "Back to my Mac please.", from: kb, want: home, rest: ""}
+  - {say: "Okay, um, go to my journal and add a note that the garden was quiet.", want: atlas,
+     rest: "add a note that the garden was quiet."}
+  - {say: "I want to go to my journal.", want: atlas, rest: ""}
+  - {say: "Can we switch to the kb?", want: kb, rest: ""}
+  - {say: "Please open the atlas.", want: atlas, rest: ""}
+  - {say: "Jump into my journal.", want: atlas, rest: ""}
+  - {say: "Go into the knowledge base and search for heat pumps.", want: kb, rest: "search for heat pumps."}
+  - {say: "Now go to atlas.", want: atlas, rest: ""}
+  - {say: "My journal.", want: atlas, rest: ""}
+  - {say: "Atlas.", want: atlas, rest: ""}
+  - {say: "Hey, can you bring up my journal?", want: atlas, rest: ""}
+  - {say: "Open up my notes.", want: atlas, rest: ""}
+  - {say: "Pull up the wiki.", want: kb, rest: ""}
+  - {say: "Go to my journal, note this: the garden was quiet.", want: atlas, rest: "note this: the garden was quiet."}
+  - {say: "Go to my journal or the kb.", want: ask, rest: ""}
+negatives:
+  - {say: "What's in my atlas folder?"}
+  - {say: "Open my atlas folder."}
+  - {say: "Go to the atlas folder and list the files."}
+  - {say: "What did I write in my journal yesterday?"}
+  - {say: "Read my journal entry from yesterday."}
+  - {say: "Open the journal entry from yesterday."}
+  - {say: "Go to sleep."}
+  - {say: "I want to go to sleep."}
+  - {say: "The kb says what about heat pumps?"}
+  - {say: "Home is where the heart is."}
+  - {say: "Can you open my notes app?"}
+  - {say: "I went to my journal club last night."}
+  - {say: "How do I go to the voice project settings?"}
+  - {say: "Search the wiki for heat pumps."}
+  - {say: "Is my journal backed up?"}
+  - {say: "Open the kb page about the hold gate."}
+  - {say: "Take me through the atlas files."}
+  - {say: "Let's talk about my journal."}
+  - {say: "Um, my journal is getting long."}
+  - {say: "Go where my journal is."}            # meant as a switch, but said indirectly: the model's space_switch tool
+  - {say: "Can we do this in the atlas instead?"}

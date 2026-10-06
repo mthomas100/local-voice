@@ -1,0 +1,184 @@
+# The voice-quality bench's fixed text set (tools/tts_quality_bench.py), written 2026-10-05. 38 items, each a whole
+# reply: its generations are rendered in order and joined, the first one trimmed as production trims it.
+#
+# kind: reply (a conversation's replies), short (a lone short sentence), list (many commas), question, dash (an em
+# dash inside the sentence), path (paths and file names, which lost their dots when spoken: "Plantxt", "Hello TXT").
+#
+# The `reply` items are synthetic stand-ins modelled on an early live test: the same mix of one- and multi-sentence
+# replies, in conversation order (`turn`), with the same cases that went wrong there. `sentences`, where given, is the
+# reply exactly as it reaches the TTS, one per generation; `text` is the reply as the model writes it. They differ in
+# two places, on purpose:
+#   - t06: "I keep them in ~/." and "notes/garden: ..." are two generations. Pipecat's SimpleTextAggregator keeps
+#     "~/.notes/garden" whole; the split comes from the spoken cap, whose sentence_end("I keep them in ~/.") fired
+#     when an LLM text delta ended right after the dot (spoken_cap.py, fixed since 2026-10-05).
+#   - t19: the permission question is one TTSSpeakFrame, so one generation of three sentences.
+# Items without `sentences` are split the production way: SimpleTextAggregator fed in small chunks, then flushed.
+# `tools/tts_quality_bench.py texts --check-log --log LOG --turns TURNS` compares the `sentences` items with the
+# "Generating TTS [...]" lines of your own orchestrator log, for a set built from your own session.
+version: 1
+items:
+  # ---- a conversation's replies (synthetic; turn numbers give their order)
+  - id: t01-hey
+    kind: reply
+    turn: 1
+    text: "Hey! What can I help you with?"
+    sentences:
+      - "Hey!"
+      - "What can I help you with?"
+  - id: t02-not-sure
+    kind: reply
+    turn: 2
+    text: "I'm not sure which file you mean — could you say a bit more about where it is?"
+    sentences: ["I'm not sure which file you mean — could you say a bit more about where it is?"]
+  - id: t03-sorry
+    kind: reply
+    turn: 3
+    text: "Sorry, I didn't catch that — could you say it again?"
+    sentences: ["Sorry, I didn't catch that — could you say it again?"]
+  - id: t04-assistant
+    kind: reply
+    turn: 4
+    text: "I'm your voice assistant on this Mac. I can answer questions, look things up, read your notes and files, and run things for you. Want to try one?"
+    sentences:
+      - "I'm your voice assistant on this Mac."
+      - "I can answer questions, look things up, read your notes and files, and run things for you."
+      - "Want to try one?"
+  - id: t05-home-folder
+    kind: reply
+    turn: 5
+    text: "Let me take a quick look at your home folder. I see the usual folders — documents, downloads, pictures, and a projects folder with a few repos. Want me to go on?"
+    sentences:
+      - "Let me take a quick look at your home folder."
+      - "I see the usual folders — documents, downloads, pictures, and a projects folder with a few repos."
+      - "Want me to go on?"
+  - id: t06-path
+    kind: reply
+    turn: 6
+    text: "Let me find where the notes live. I keep them in ~/.notes/garden: one file per bed, with the seed list and the watering log on top. Want the details?"
+    sentences:
+      - "Let me find where the notes live."
+      - "I keep them in ~/."
+      - "notes/garden: one file per bed, with the seed list and the watering log on top."
+      - "Want the details?"
+  - id: t07-notes
+    kind: reply
+    turn: 7
+    text: "Let me look in the notes folder. Notes are grouped by topic — one folder each for garden, recipes, travel, and reading — with a short index on top. Want me to go on?"
+    sentences:
+      - "Let me look in the notes folder."
+      - "Notes are grouped by topic — one folder each for garden, recipes, travel, and reading — with a short index on top."
+      - "Want me to go on?"
+  - id: t08-those-folders
+    kind: reply
+    turn: 8
+    text: "Let me look at those folders."
+    sentences: ["Let me look at those folders."]
+  - id: t09-recipes
+    kind: reply
+    turn: 9
+    text: "The recipes folder has soups, breads, salads, and a few desserts. The newest page is a lentil soup from last week. Want me to read it?"
+    sentences:
+      - "The recipes folder has soups, breads, salads, and a few desserts."
+      - "The newest page is a lentil soup from last week."
+      - "Want me to read it?"
+  - id: t11-travel
+    kind: reply
+    turn: 11
+    text: "Let me look inside those folders. Travel holds three trip plans — the coast, the mountains, and a city weekend. Reading has a list of books, two of them marked done."
+    sentences:
+      - "Let me look inside those folders."
+      - "Travel holds three trip plans — the coast, the mountains, and a city weekend."
+      - "Reading has a list of books, two of them marked done."
+  - id: t12-six
+    kind: short
+    turn: 12
+    text: "Six."
+    sentences: ["Six."]
+  - id: t14-journal
+    kind: reply
+    turn: 14
+    text: "Let me look in the journal folder."
+    sentences: ["Let me look in the journal folder."]
+  - id: t15-journal
+    kind: reply
+    turn: 15
+    text: "Let me look. I found the journal — dated daily notes, and I know the front-matter format. I can write today's note with a short entry about the garden. Want me to go on?"
+    sentences:
+      - "Let me look."
+      - "I found the journal — dated daily notes, and I know the front-matter format."
+      - "I can write today's note with a short entry about the garden."
+      - "Want me to go on?"
+  - id: t16-act-mode
+    kind: reply
+    turn: 16
+    text: "Let me check. I don't have a write tool in this mode — creating the file needs act mode. Everything's ready though: today's note with the daily template's front matter and your line about the garden."
+    sentences:
+      - "Let me check."
+      - "I don't have a write tool in this mode — creating the file needs act mode."
+      - "Everything's ready though: today's note with the daily template's front matter and your line about the garden."
+  - id: t17-inbox
+    kind: reply
+    turn: 17
+    text: "Let me check the inbox folder. Yes — the journal has an inbox folder for exactly this, and I can file a page there. It'd say: water the tomato beds on Friday. Want me to go on?"
+    sentences:
+      - "Let me check the inbox folder."
+      - "Yes — the journal has an inbox folder for exactly this, and I can file a page there."
+      - "It'd say: water the tomato beds on Friday."
+      - "Want me to go on?"
+  - id: t18-kb-new
+    kind: reply
+    turn: 18
+    text: "Let me check the kb tool's options. Yes — the kb tool has a \"new\" verb, so I can add a page directly. No setup needed. Want me to go on?"
+    sentences:
+      - "Let me check the kb tool's options."
+      - "Yes — the kb tool has a \"new\" verb, so I can add a page directly."
+      - "No setup needed."
+      - "Want me to go on?"
+  - id: t19-approval
+    kind: reply
+    turn: 19
+    text: "Let me look that up. May I change your knowledge base? It starts with kb new. Yes or no? That didn't go through — the approval timed out, so the page wasn't added. Want me to try again?"
+    sentences:
+      - "Let me look that up."
+      - "May I change your knowledge base? It starts with kb new. Yes or no?"
+      - "That didn't go through — the approval timed out, so the page wasn't added."
+      - "Want me to try again?"
+
+  # ---- lone short sentences (never let one reach Qwen3-TTS alone; "Six." is turn 12 above)
+  - {id: short-hey, kind: short, text: "Hey!"}
+  - {id: short-saved, kind: short, text: "Saved."}
+  - {id: short-done, kind: short, text: "Done."}
+  - {id: short-yes, kind: short, text: "Yes."}
+  - {id: short-okay, kind: short, text: "Okay."}
+  - {id: short-rome, kind: short, text: "Rome."}
+
+  # ---- list-like answers with many commas
+  - id: list-meetings
+    kind: list
+    text: "You have three meetings today: standup at nine, a design review at eleven, and a call with Sam at four."
+  - id: list-folder
+    kind: list
+    text: "The folder has notes, drafts, receipts, photos, invoices, and an old backup from March."
+  - id: list-packing
+    kind: list
+    text: "For the trip you'll want a rain jacket, warm socks, a charger, your passport, sunscreen, and snacks for the train."
+  - id: list-matches
+    kind: list
+    text: "I found five matches: the README, the config file, two test files, and a script called deploy."
+
+  # ---- questions
+  - {id: q-first-one, kind: question, text: "Do you want me to read the first one?"}
+  - {id: q-journal, kind: question, text: "Should I save that to your journal, or just keep it in mind for now?"}
+  - {id: q-which-folder, kind: question, text: "Which folder did you mean, the one in your home folder or the one on the desktop?"}
+  - {id: q-today, kind: question, text: "Is that for today or tomorrow?"}
+
+  # ---- em dashes inside a sentence
+  - {id: dash-breakdown, kind: dash, text: "I couldn't check inside each one — want the full breakdown?"}
+  - {id: dash-build, kind: dash, text: "The build passed — but two tests were skipped, and one of them is flaky."}
+  - {id: dash-bike, kind: dash, text: "It's about twenty minutes by bike — less if the lights are with you."}
+
+  # ---- paths and file names
+  - {id: path-settings, kind: path, text: "The config lives in ~/.pi/agent/settings.json."}
+  - {id: path-journal, kind: path, text: "I saved it to journal/2026-10-05.md in your Atlas."}
+  - {id: path-readme, kind: path, text: "I opened README.md and config.yaml; both look fine."}
+  - {id: path-txt, kind: path, text: "I wrote Hello.txt and plan.txt in the scratch folder."}

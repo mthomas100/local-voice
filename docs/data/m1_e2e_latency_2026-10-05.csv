@@ -1,0 +1,7 @@
+turn,prompt_spoken_by_macos_say,warm,endpointing_wait_ms,transcription_ms,turn_detection_ms,llm_first_token_ms,tts_first_audio_ms,server_eos_to_first_audio_ms,client_eos_to_first_audio_ms
+1,What is the capital of France?,False,200.0,36.8,620.7,2681.4,330.1,3869.0,3906
+2,Say hello in Spanish.,True,200.0,77.6,2.2,334.2,284.6,899.2,924
+3,What color is the sky on a clear day?,True,200.0,49.7,16.7,353.3,288.0,907.6,926
+4,Name a fruit that is yellow.,True,200.0,30.1,22.1,339.7,277.1,869.5,850
+5,What is the opposite of cold?,True,200.0,24.4,39.7,351.9,292.3,908.2,874
+6,Which animal says moo?,True,200.0,66.9,6.3,312.1,284.8,870.0,864

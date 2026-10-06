@@ -1,0 +1,51 @@
+# brain/config.toml: the background brain's settings (M4, written 2026-10-05). The one source for every path, gate,
+# model and limit the job uses; `local_voice_brain/config.py` reads it, fills in nothing silently, and names the key
+# when something is wrong. `~` expands; relative paths are relative to the local-voice repo root.
+
+[paths]
+turns_dir = "state/turns"            # the orchestrator's turn log (brain/TURN_LOG.md)
+state_dir = "state/brain"            # ledger, per-day reports, outbox, the reflection's Pi session files
+
+[gates]
+# The GPU rule: no LLM call unless gpu_clear.sh exits 0 right before it. It is run before every call; a
+# missing script counts as BUSY. Our own previous call makes it say BUSY for 120 s (it watches llama-swap's last
+# POST), so between our own passes the job waits up to gpu_wait_s, polling every gpu_poll_s.
+gpu_clear = "measure/bench/gpu_clear.sh"
+gpu_wait_s = 420
+gpu_poll_s = 30
+quiet_minutes = 20                   # no voice turn started or ended this recently (turn log)
+user_idle_minutes = 15               # macOS HID idle time (keyboard, mouse, trackpad); 0 turns the check off
+orchestrator_status = "http://127.0.0.1:8770/v1/status"   # unreachable means not running, which is fine
+busy_states = ["thinking", "speaking"]                     # PROTOCOL.md states that mean a turn is under way
+
+[llm]
+runtime = "pi"                       # the only runtime adapter so far: `pi --mode json`, one run per pass
+# launchd has no nvm in its PATH, so the path is explicit: set it to the output of `which pi`.
+pi_bin = "~/.nvm/versions/node/v22.23.1/bin/pi"
+agent_dir = ""                       # PI_CODING_AGENT_DIR for the runs; empty = Pi's default (~/.pi/agent, read only)
+session_dir = "state/brain/pi-sessions"
+model = "local/qwen27-262k"          # the slow dense model reflects; the fast one stays the live voice brain
+# Found 2026-10-05: llama-server ignores Pi's thinking switch for qwen27 unless its models.json row carries
+# compat.thinkingFormat "qwen-chat-template". Until then the job uses fallback_model.
+fallback_model = "local/qwen38"
+restore_model = "local/qwen38"       # after a pass on another model, one tiny call reloads the live brain
+timeout_s = 900
+max_prompt_chars = 120000            # about 30k tokens; the oldest replies are shortened first, then the oldest turns
+
+[kb]
+enabled = true
+home = "~/kb"                        # KB_HOME of an optional `kb` knowledge base; the binary is <home>/bin/kb and the Pi adapter <home>/adapters/pi/kb.ts
+
+[atlas]
+enabled = true
+root = "~/atlas"                     # an Atlas-style markdown journal repo with atlas.py; set enabled = false without one
+space = "atlas"                      # spaces.yaml name of the space whose turns are life content
+by = "voice-brain"                   # the `by:` of the inbox pages (anything but `me` marks an agent's page)
+
+[digest]
+max_facts = 12
+max_reflections = 3
+spoken_max_words = 45                # the model's spoken sentences, before the fixed Atlas sentence is added
+outbox_expiry_days = 3
+max_attempts = 3                     # failed runs per day before the day is marked failed (`run.sh retry DAY` resets)
+max_backlog_days = 7                 # undigested days older than this are marked skipped, not digested

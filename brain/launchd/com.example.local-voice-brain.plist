@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- local-voice background brain (M4, written 2026-10-05; NOT loaded: installing it is a manual step, see
+       brain/README.md). A template: launchd expands neither $HOME nor ~, so the install step replaces __HOME__
+       and __REPO__ (this repo's absolute path) with sed. Every 30 minutes one heartbeat: it digests a finished day
+       of voice sessions only when the Mac is idle and measure/bench/gpu_clear.sh says CLEAR, and otherwise exits at
+       once. launchd does not source the login shell; run.sh sets PATH. -->
+  <key>Label</key>
+  <string>com.example.local-voice-brain</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/zsh</string>
+    <string>__REPO__/brain/run.sh</string>
+    <string>heartbeat</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HOME</key>
+    <string>__HOME__</string>
+  </dict>
+  <key>StartInterval</key>
+  <integer>1800</integer>
+  <key>RunAtLoad</key>
+  <false/>
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>LowPriorityIO</key>
+  <true/>
+  <key>Nice</key>
+  <integer>10</integer>
+  <key>StandardOutPath</key>
+  <string>__REPO__/state/brain/launchd.log</string>
+  <key>StandardErrorPath</key>
+  <string>__REPO__/state/brain/launchd.log</string>
+</dict>
+</plist>

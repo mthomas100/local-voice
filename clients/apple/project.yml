@@ -1,0 +1,169 @@
+# Local Voice Apple clients (milestone M2): the iPhone app with its Live Activity widget, and the Mac menu-bar app.
+# Both speak PROTOCOL.md v1 through the LocalVoiceKit package next to this file.
+#
+# This spec is the source of truth: `./build.sh generate` writes LocalVoice.xcodeproj and the Info.plists under
+# Generated/ (both git-ignored; never hand-edit them). Written 2026-10-05.
+name: LocalVoice
+options:
+  bundleIdPrefix: local.voice
+  createIntermediateGroups: true
+  developmentLanguage: en
+  deploymentTarget:
+    iOS: "18.0"
+    macOS: "15.0"
+
+settings:
+  base:
+    # Your Apple developer team ID (the Apple Development certificate's OU), for automatic signing in Xcode.
+    # Unattended ./build.sh builds sign ad hoc and ignore it. Replace YOUR_TEAM_ID before a device install.
+    DEVELOPMENT_TEAM: YOUR_TEAM_ID
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+    # The iPhone app's default server: your Mac's MagicDNS name on your tailnet (`tailscale status --json`, Self.DNSName).
+    # Replace the placeholder here, or change the server in the app's settings.
+    LV_MAC_TAILNET_HOST: your-mac.your-tailnet.ts.net
+    # Push to Talk is off unless built with LV_PUSH_TO_TALK=YES (needs your own App ID with the Push to Talk capability and an APNs key).
+    LV_PUSH_TO_TALK: NO
+
+packages:
+  LocalVoiceKit:
+    path: LocalVoiceKit
+
+targets:
+  LocalVoice:
+    type: application
+    platform: iOS
+    sources:
+      - iOS
+      - Shared
+    dependencies:
+      - package: LocalVoiceKit
+        product: LocalVoiceKit
+      - package: LocalVoiceKit
+        product: LocalVoiceUI
+      - target: LocalVoiceWidgets
+    info:
+      path: Generated/LocalVoice-Info.plist
+      properties:
+        CFBundleDisplayName: Local Voice
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        # audio: mic, speaker and socket keep running once a session started in the foreground; voip: CallKit mode.
+        UIBackgroundModes: [audio, voip]
+        NSMicrophoneUsageDescription: Local Voice sends what you say to the voice agent on your Mac, over your tailnet.
+        NSLocalNetworkUsageDescription: Local Voice talks to the voice agent on your Mac.
+        NSSupportsLiveActivities: true
+        # ws:// to the Mac over Tailscale: WireGuard already encrypts it; a wss:// path needs HTTPS
+        # certificates turned on in the Tailscale admin console. Since iOS 17 ATS blocks raw IP
+        # addresses unless excepted (Apple's NSAllowsLocalNetworking docs), so Tailscale's address ranges are listed
+        # too, in case an address is typed instead of the MagicDNS name. `ts.net` with subdomains covers any tailnet.
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+          NSExceptionDomains:
+            ts.net:
+              NSIncludesSubdomains: true
+              NSExceptionAllowsInsecureHTTPLoads: true
+            100.64.0.0/10:
+              NSExceptionAllowsInsecureHTTPLoads: true
+            fd7a:115c:a1e0::/48:
+              NSExceptionAllowsInsecureHTTPLoads: true
+        LVDefaultServerHost: $(LV_MAC_TAILNET_HOST)
+        LVDefaultServerPort: "8770"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: local.voice.iphone
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_ENTITLEMENTS: $(LV_ENTITLEMENTS_$(LV_PUSH_TO_TALK))
+        LV_ENTITLEMENTS_NO: ""
+        LV_ENTITLEMENTS_YES: iOS/LocalVoicePTT.entitlements
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) $(LV_PTT_FLAG_$(LV_PUSH_TO_TALK))
+        LV_PTT_FLAG_NO: ""
+        LV_PTT_FLAG_YES: PUSH_TO_TALK
+    postBuildScripts:
+      # The processed Info.plist is declared as input so this runs after ProcessInfoPlistFile (otherwise the build
+      # system runs it first and the processing overwrites it, found 2026-10-05). It adds or removes the mode, so a
+      # build with the flag off never keeps it from an earlier build with it on.
+      - name: Push to Talk background mode (LV_PUSH_TO_TALK=YES only)
+        basedOnDependencyAnalysis: false
+        inputFiles:
+          - $(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)
+        script: |
+          plist="${TARGET_BUILD_DIR}/${INFOPLIST_PATH}"
+          has=$(/usr/libexec/PlistBuddy -c "Print :UIBackgroundModes" "$plist" 2>/dev/null | grep -c push-to-talk || true)
+          if [ "${LV_PUSH_TO_TALK}" = "YES" ] && [ "$has" = "0" ]; then
+            /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes: string push-to-talk" "$plist"
+          elif [ "${LV_PUSH_TO_TALK}" != "YES" ] && [ "$has" != "0" ]; then
+            i=0
+            while /usr/libexec/PlistBuddy -c "Print :UIBackgroundModes:$i" "$plist" >/dev/null 2>&1; do
+              if [ "$(/usr/libexec/PlistBuddy -c "Print :UIBackgroundModes:$i" "$plist")" = "push-to-talk" ]; then
+                /usr/libexec/PlistBuddy -c "Delete :UIBackgroundModes:$i" "$plist"
+              else
+                i=$((i + 1))
+              fi
+            done
+          fi
+
+  LocalVoiceWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - Widgets
+      - Shared
+    info:
+      path: Generated/LocalVoiceWidgets-Info.plist
+      properties:
+        CFBundleDisplayName: Local Voice
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: local.voice.iphone.widgets
+        TARGETED_DEVICE_FAMILY: "1"
+
+  LocalVoiceMac:
+    type: application
+    platform: macOS
+    sources:
+      - macOS
+    dependencies:
+      - package: LocalVoiceKit
+        product: LocalVoiceKit
+      - package: LocalVoiceKit
+        product: LocalVoiceUI
+    info:
+      path: Generated/LocalVoiceMac-Info.plist
+      properties:
+        CFBundleDisplayName: Local Voice
+        LSUIElement: true
+        LSApplicationCategoryType: public.app-category.productivity
+        NSMicrophoneUsageDescription: Local Voice sends what you say to the voice agent on this Mac.
+        LVDefaultServerHost: 127.0.0.1
+        LVDefaultServerPort: "8770"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: local.voice.mac
+        PRODUCT_NAME: LocalVoice
+        # Not sandboxed and no hardened runtime: a personal menu-bar app run from this Mac. The microphone needs only
+        # the usage string (one system prompt on first use).
+        ENABLE_HARDENED_RUNTIME: NO
+        ENABLE_APP_SANDBOX: NO
+
+schemes:
+  LocalVoice:
+    build:
+      targets:
+        LocalVoice: all
+        LocalVoiceWidgets: all
+    run:
+      config: Debug
+  LocalVoiceMac:
+    build:
+      targets:
+        LocalVoiceMac: all
+    run:
+      config: Debug
