@@ -1,8 +1,7 @@
 # Pipecat 1.12 skeletons for the orchestrator
 
-Starting points for the `orchestrator` agent, written 2026-10-05 for due-diligence task 04c. Every claim in the
-code comments cites the installed pipecat-ai 1.12.0 source as `file:line`; the full reasoning, with the source
-excerpts, is research note 04c, kept with the design notes in a private wiki.
+Starting points for the orchestrator, written 2026-10-05. Every claim in the
+code comments cites the installed pipecat-ai 1.12.0 source as `file:line`.
 
 These files construct and import without loading any model. They have not run a turn: no audio has gone
 through them, no model was called, and no socket was bound. Treat every behaviour described here as read from
@@ -38,7 +37,7 @@ not run (no model was loaded during that check).
 
 ## What the orchestrator still has to build and test
 
-- Real engines behind `TranscribeEngine` and `SpeechEngine` (mlx-audio 0.5.7 calls: research note 09c), warmed
+- Real engines behind `TranscribeEngine` and `SpeechEngine` (mlx-audio 0.5.7 calls: measure/mlx-audio-api.md), warmed
   at startup on the MLX thread, behind the hold gate.
 - The Pi child per space from `research-prototypes/pi_rpc_bridge/` as the bridge's backend. Integration
   point to verify: after an abort, the aborted run's tail (`message_end`, `agent_end`, `agent_settled`) lands

@@ -1,4 +1,4 @@
-"""Barge-in hygiene (05c E10, after the 04c review): an aborted run's leftovers never leak into the next turn,
+"""Barge-in hygiene: an aborted run's leftovers never leak into the next turn,
 the abort is safe on a cancellation path, and an open confirm dialog does not hold the abort."""
 import asyncio
 import time

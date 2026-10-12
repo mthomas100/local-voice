@@ -170,7 +170,7 @@ def load_spaces(cfg: Config, path: Path | None = None, *, check_paths: bool = Tr
         exts = [Path(str(e)).expanduser() for e in _list_of_str(s.get("extensions"), f"{w}.extensions")]
         for e in exts:
             if "film-rig" in e.name:
-                raise SpacesError(f"{w}.extensions: never film-rig.ts (a video rig's extension: a voice turn would hang mute during a render, 05c)")
+                raise SpacesError(f"{w}.extensions: never film-rig.ts (a video rig's extension: a voice turn would hang mute during a render)")
             if check_paths and not e.exists():
                 raise SpacesError(f"{w}.extensions: {e} does not exist")
         bash_allow_raw = s.get("bash_allow") or []

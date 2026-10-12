@@ -1,44 +1,33 @@
-# 09 — Local TTS / STT / audio-native measurements (Apple M5 Max, 128 GB, macOS 27.0), 2026-10-04
+# Voice components on Apple silicon, phase 1: TTS, STT and audio-native models (2026-10-04)
 
-Evidence: JSON results in `raw/*.jsonl`; scripts in `bench/`; generated audio in `audio/` (gitignored). Numbers below
-are copied from those files; the full command log was kept locally and is not published.
+Machine: Apple M5 Max, 128 GB, macOS 27.0. Evidence: JSON results in `raw/*.jsonl`; scripts in `bench/`; generated
+audio in `audio/` (gitignored). Every number below is copied from those files.
 
-## 0. What could and could not be measured, and why
+## 0. Measurement conditions
 
-GPU safety protocol followed: before each phase `curl 127.0.0.1:8090/running`, the render-job `pgrep`,
-and `hold status`. Timeline:
+Before each phase the bench checked the GPU: llama-swap's `/running`, a process check for render jobs, and the hold
+gate's status. Two conditions apply:
 
-- 20:59–21:05: another GPU job (a video render, RSS 20 GB) was running.
-  Nothing was run on the GPU; code reading, cache inspection, the test clip, the scratch venv and the Kokoro
-  download happened in this window.
-- 21:05: the render finished. 21:05:43: **another agent session loaded the LLM** (qwen38 =
-  Qwen3.8 Flash Next, ds4-server, RSS 12.9 GB, llama-swap ttl 0) and started sending long chat completions
-  (57 s and more). `/running` was therefore not `[]`. Treated as a live GPU user; waited.
-- 21:33: a manual hold (`hold status` → "held: manual") unloaded the LLM; 21:34:03 `/running` = `[]`.
-  **Kokoro (21:35:52), Qwen3-TTS 0.6B (21:36:24) and 1.7B (21:37:35) ran in this clean window** (no render, LLM
-  unloaded).
-- 21:38:38: another GPU job (a short 480p video render, done 21:40) started. The first Parakeet
-  run (21:38:58) overlapped it (my check printed the job but the chain did not stop; fixed afterwards with
-  `bench/gate.sh`, which refuses to run when a render job exists). That run is reported as contended and was redone.
-- 21:41:44: the hold was released and the other session reloaded the LLM (last request 21:41:55), then went idle.
-  From 21:50 the LLM was resident but idle for 9+ minutes, the hold gate open, no render: **the Parakeet rerun,
-  both co-residency runs, both server runs and the sampling check ran in that state (21:50–21:57)**. This deviates
-  from the plan's literal "running must be []" (an agreed fallback); the llama-swap log
-  shows no LLM request between 21:41:55 and the end of the measurements, so nothing contended, and the GPU gate output
-  before each phase was logged.
+- **Nothing else on the GPU, LLM unloaded:** the three TTS phases (Kokoro, Qwen3-TTS 0.6B and 1.7B).
+- **LLM resident but idle, no render:** the Parakeet rerun, both co-residency runs, both server runs and the sampling
+  check. llama-swap's log shows no LLM request during these phases, so nothing contended, but the LLM's weights were
+  resident.
+
+The first Parakeet run overlapped a short video render that started just before it. It is reported as contended and
+was redone; `bench/gate.sh`, which refuses to run while a render job exists, was added because of it.
 
 Cache reality (checked with `du` on `blobs/`, not on the snapshot symlinks):
 
 | Hub id | On disk | Status |
 |---|---|---|
-| mlx-community/Qwen3-TTS-12Hz-1.7B-VoiceDesign-bf16 | 4.3 MB | metadata only, **no weights** (hub: 4.52 GB) → not downloaded (over the 2 GB line) |
+| mlx-community/Qwen3-TTS-12Hz-1.7B-VoiceDesign-bf16 | 4.3 MB | metadata only, **no weights** (hub: 4.52 GB) → not measured |
 | Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign, -1.7B-Base | 4.3 MB each | metadata only, no weights |
-| mlx-community/Qwen3-Omni-30B-A3B-Instruct-8bit | 3.1 MB | config/tokenizer only, **no weights** (hub: 38.78 GB, 8 shards) → not downloaded |
+| mlx-community/Qwen3-Omni-30B-A3B-Instruct-8bit | 3.1 MB | config/tokenizer only, **no weights** (hub: 38.78 GB, 8 shards) → not measured |
 | mlx-community/IndexTTS | 468 KB | metadata only |
 | Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice | 2.3 GB | weights present (PyTorch checkpoint; mlx-audio converts on load) |
 | Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice | 4.2 GB | weights present (same) |
 | mlx-community/parakeet-tdt-0.6b-v3 | 2.3 GB | weights present |
-| mlx-community/Kokoro-82M-bf16 | 372 MB | **downloaded during this task** (32.5 s), 108 voice packs |
+| mlx-community/Kokoro-82M-bf16 | 372 MB | **downloaded for this run** (32.5 s), 108 voice packs |
 | mlx-community/Qwen3-TTS-12Hz-0.6B-VoiceDesign-bf16 | — | does not exist on the hub (404) |
 
 So the measured TTS set is Qwen3-TTS 1.7B **CustomVoice** (voice Ryan), Qwen3-TTS 0.6B CustomVoice, and
@@ -52,13 +41,12 @@ inference, not a measurement.
 |---|---|
 | Machine | Apple M5 Max (Mac17,6), `hw.memsize` 137438953472 B = 128 GiB, macOS 27.0 (26A5425a) |
 | `mx.device_info()` | max_recommended_working_set_size 120259084288 B (112 GiB); max_buffer_length 86586540032 B; arch applegpu_g17s |
-| mlx-audio | clone `~/repos/mlx-audio` @ ee0c65d (2026-09-11), version 0.5.3; venv python 3.11.15, mlx 0.31.2, mlx-lm 0.31.3, transformers 5.14.1 |
-| vm_stat 21:01 (during the render) | pages free 36856, active 3478132, inactive 3908401, wired 1178740 (16 KiB pages) |
-| vm_stat 21:34 (render done, LLM unloaded) | free 1075431, active 1717664, inactive 5331910 |
-| vm_stat 21:54 (after all phases; LLM resident) | free 722534 (11.0 GiB), active 1063872, inactive 1595995, wired 5083729 (77.6 GiB, the ds4-server LLM with a 262K context, not mine) |
+| mlx-audio | a clone at ee0c65d (2026-09-11), version 0.5.3; venv python 3.11.15, mlx 0.31.2, mlx-lm 0.31.3, transformers 5.14.1 |
+| vm_stat (during a render) | pages free 36856, active 3478132, inactive 3908401, wired 1178740 (16 KiB pages) |
+| vm_stat (render done, LLM unloaded) | free 1075431, active 1717664, inactive 5331910 |
+| vm_stat (after all phases; LLM resident) | free 722534 (11.0 GiB), active 1063872, inactive 1595995, wired 5083729 (77.6 GiB, mostly the resident LLM with a 262K context) |
 
-Kokoro needs the `misaki` G2P package, which is not in the mlx-audio venv. To avoid installing into the
-user's venv, a scratch venv was created under `bench/venv-kokoro` (same 3.11.15 interpreter) with
+Kokoro needs the `misaki` G2P package, which is not in the mlx-audio venv. To keep that venv unchanged, a scratch venv was created under `bench/venv-kokoro` (same 3.11.15 interpreter) with
 `misaki num2words spacy` (the `misaki[en]` extra would have pulled torch + spacy-curated-transformers, which
 `KokoroPipeline` does not use: it calls `en.G2P(trf=False)`), plus a `.pth` that adds the clone and the
 clone venv's site-packages. Nothing system-wide was changed.
@@ -90,11 +78,11 @@ clone venv's site-packages. Nothing system-wide was changed.
   with `audio_write(buffer, audio, sr, format=response_format)` and emitted, i.e. **each HTTP chunk is a
   self-contained encoded file** (for `wav`, each chunk has its own RIFF header). Flags: `--host --port
   --realtime --realtime-model --vad-model --tts-max-batch-size`.
-- **Pi's tts skill** (`~/.pi/agent/skills/tts/scripts/engines/mlx_audio_tts.py`) loads via
+- **A typical non-streaming TTS daemon** (an existing Pi TTS skill was read for comparison) loads via
   `mlx_audio.tts.utils.load_model`, warms up once, and calls `batch_generate`/`generate` **without
   `stream=True`**; it gets latency by splitting replies into sentences (first chunk ≤60 chars) and batching
-  (`max_batch 6`). Its config comments record 2026-09-13 numbers: 0.6B load 3.8 s, RTF 0.25 (one sentence),
-  2.6 GB; 1.7B load 2.2 s, RTF 0.30, 4.6 GB.
+  (`max_batch 6`). Its recorded numbers: 0.6B load 3.8 s, RTF 0.25 (one sentence), 2.6 GB; 1.7B load 2.2 s,
+  RTF 0.30, 4.6 GB.
 
 ## 3. TTS measurements
 
@@ -111,7 +99,7 @@ Raw: `raw/tts_kokoro.jsonl`, `raw/tts_qwen3_0.6b.jsonl`, `raw/tts_qwen3_1.7b.jso
 
 ### 3a. Kokoro-82M-bf16 (`mlx-community/Kokoro-82M-bf16`, voice af_heart, lang a, scratch venv, EspeakFallback disabled)
 
-Command: `/usr/bin/time -l bench/venv-kokoro/bin/python bench/tts_bench.py --model mlx-community/Kokoro-82M-bf16 --voice af_heart --lang a --kokoro --no-espeak-fallback --runs 3` (21:35:52, `/running` was `[]`, LLM unloaded under a manual hold)
+Command: `/usr/bin/time -l bench/venv-kokoro/bin/python bench/tts_bench.py --model mlx-community/Kokoro-82M-bf16 --voice af_heart --lang a --kokoro --no-espeak-fallback --runs 3` (nothing else on the GPU, LLM unloaded)
 
 | Item | Value |
 |---|---|
@@ -134,11 +122,11 @@ did not drop words from these texts.
 
 ### 3b. Qwen3-TTS 0.6B CustomVoice (`Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice`, voice Ryan, lang english; mlx-audio converts the PyTorch checkpoint on load)
 
-Command: `/usr/bin/time -l ~/repos/mlx-audio/.venv/bin/python bench/tts_bench.py --model Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice --voice Ryan --lang english --stream-intervals 2.0,0.5 --runs 3` (21:36:24, `/running` `[]`)
+Command: `/usr/bin/time -l ~/repos/mlx-audio/.venv/bin/python bench/tts_bench.py --model Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice --voice Ryan --lang english --stream-intervals 2.0,0.5 --runs 3` (LLM unloaded)
 
 | Item | Value |
 |---|---|
-| Load | 1.442 s (0.944 s on a second load in the co-residency run; Pi's skill measured 3.8 s cold on 2026-09-13) |
+| Load | 1.442 s (0.944 s on a second load in the co-residency run; the TTS daemon above recorded 3.8 s cold) |
 | MLX active after load | 2.39 GiB |
 | Warm-up | 1.80 s |
 | Max RSS / peak footprint | 2.75 GB / 15.75 GB |
@@ -158,7 +146,7 @@ Parakeet transcribed the long non-stream output back verbatim (one comma rendere
 
 ### 3c. Qwen3-TTS 1.7B CustomVoice (`Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice`, voice Ryan, lang english)
 
-Command: same with `--model Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice` (21:37:35, `/running` `[]`)
+Command: same with `--model Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice` (LLM unloaded)
 
 | Item | Value |
 |---|---|
@@ -192,14 +180,13 @@ Clip: `say -v Samantha` "Could you check the weather for tomorrow afternoon?" �
 → `audio/clip3_16k.wav` (16 kHz mono int16, 2.483 s). Command: `/usr/bin/time -l ~/repos/mlx-audio/.venv/bin/python
 bench/stt_bench.py --clip audio/clip3_16k.wav --runs 3` (`bench/stt_bench.py`).
 
-Two runs exist. The first (21:38:58) **overlapped a 480p video render** that another job had just started
-(21:38:38–21:40); the rerun (21:50:53) had no render running (LLM resident but idle 9 min). Only the
-rerun is a clean number; both are reported.
+Two runs exist. The first **overlapped a short 480p video render**; the rerun had no render running (LLM resident
+but idle). Only the rerun is a clean number; both are reported.
 
 | run | load s | warm-up s | latency from file path, median (runs) | latency from pre-loaded array, median (runs) | transcript | MLX active / peak GiB | max RSS |
 |---|---|---|---|---|---|---|---|
-| clean rerun 21:50 | 1.063 | 0.213 | **0.021** (0.021, 0.022, 0.021) | **0.020** (0.020, 0.021, 0.020) | exact: "Could you check the weather for tomorrow afternoon?" | 2.38 / 2.44 | 2.64 GB |
-| contended 21:38 (render) | 1.018 | 0.367 | 0.195 (0.138, 0.208, 0.195) | 0.187 (0.189, 0.187, 0.110) | exact | 2.38 / 2.44 | 2.64 GB |
+| clean rerun | 1.063 | 0.213 | **0.021** (0.021, 0.022, 0.021) | **0.020** (0.020, 0.021, 0.020) | exact: "Could you check the weather for tomorrow afternoon?" | 2.38 / 2.44 | 2.64 GB |
+| contended (render) | 1.018 | 0.367 | 0.195 (0.138, 0.208, 0.195) | 0.187 (0.189, 0.187, 0.110) | exact | 2.38 / 2.44 | 2.64 GB |
 
 So a 2.5 s utterance decodes in ~20 ms once warm (≈120× real time), and GPU contention from a render costs ~10×.
 `stream_generate()` over the finished clip (chunk 5 s / overlap 1 s): one final result at 0.022 s. With chunk 1.0 s /
@@ -243,9 +230,9 @@ complete 0.48 s WAV, arriving as an 8,186-byte HTTP chunk with the RIFF header p
 chunk every ~0.100 s; 54 RIFF headers in a 1,227,336-byte stream (25.6 s of audio in 5.47 s). **Each streamed chunk
 is a self-contained WAV file** (`_emit_audio` runs `audio_write(format=response_format)` per chunk), so a client must
 parse chunk by chunk; `afinfo` on a saved stream reports only the first chunk (0.48 s). `response_format: pcm` is not
-offered by the WAV writer path I exercised; mp3 is the default and would be re-encoded per chunk the same way.
+offered by the WAV writer path exercised here; mp3 is the default and would be re-encoded per chunk the same way.
 
-**Runaway generation with the server's default sampling (checked 21:56).** Three
+**Runaway generation with the server's default sampling.** Three
 more long non-stream requests with the server defaults (`temperature 0.7, top_p 0.95, top_k 40, repetition_penalty
 1.0, max_tokens 1200`) and two with the model's own defaults passed in the request body
 (`temperature 0.9, top_k 50, top_p 1.0, repetition_penalty 1.05`), each transcribed back with Parakeet:
@@ -298,7 +285,7 @@ flag has no effect for Kokoro; the server does not sentence-split for it.
   Budget 10 GiB for STT+TTS and the total stays at 30–45 GB; the `time -l` "peak memory footprint" figures (5–16 GB)
   include Metal's transient allocations and over-state what stays resident.
 - **Warm-up matters:** first generate costs Kokoro 4.3 s (kernel compile + spaCy/misaki init), Qwen3-TTS 1.0–1.8 s,
-  Parakeet 0.2–0.4 s. Warm every model at startup (Pi's tts daemon already does). Loads are 0.2–1.5 s, so unload /
+  Parakeet 0.2–0.4 s. Warm every model at startup. Loads are 0.2–1.5 s, so unload /
   reload on idle is viable if the warm-up is repeated after reload.
 - **Qwen3-TTS duration variance is a real risk:** the same 46 words came out as 17.4–22.2 s with model defaults,
   once 25.0 s (1.7B), 18.6–39.8 s with the server's default sampling (temperature 0.7, top_p 0.95, top_k 40,
@@ -313,10 +300,10 @@ flag has no effect for Kokoro; the server does not sentence-split for it.
 ## 8. Audio-native model feasibility: Qwen3-Omni-30B-A3B-Instruct (MLX 8-bit)
 
 Not run: the weights are not on disk (only `config.json`, tokenizer, chat template, index; the 8
-safetensors shards total **38.76 GB** per `model.safetensors.index.json`). Downloading is far over the
-2 GB line, so this is a paper check.
+safetensors shards total **38.76 GB** per `model.safetensors.index.json`). They were not downloaded, so this is a
+paper check.
 
-- **Runtime exists on this Mac.** `~/repos/local-decision/.venv` has mlx-vlm **0.7.4** (mlx 0.32.3,
+- **Runtime exists on this Mac.** A separate venv has mlx-vlm **0.7.4** (mlx 0.32.3,
   transformers 5.18.0, mlx-audio 0.5.7 as a dependency). Its `mlx_vlm/models/qwen3_omni_moe/` package has
   `audio.py` (audio tower, 32-layer `qwen3_omni_moe_audio_encoder`), `thinker.py`, `talker.py`,
   `code2wav.py`, `processing_qwen3_omni_moe.py` (builds `input_features` / `feature_attention_mask` from
@@ -338,41 +325,31 @@ safetensors shards total **38.76 GB** per `model.safetensors.index.json`). Downl
   tok/s after a prefill that includes the audio encoder (3 s of audio ≈ 75 audio tokens after the
   encoder's 8× merge; the encoder pass is the TTFT cost). These are estimates from similar-size MoE models
   on this machine; measure before relying on them.
-- **To run it:** `uv pip install mlx-vlm` into a scratch venv , then `snapshot_download("mlx-community/Qwen3-Omni-30B-A3B-Instruct-8bit")` (38.8 GB), then
+- **To run it:** `uv pip install mlx-vlm` into a scratch venv, then `snapshot_download("mlx-community/Qwen3-Omni-30B-A3B-Instruct-8bit")` (38.8 GB), then
   `mlx_vlm.load(...)`, build a chat with `{"type":"audio","audio": path}` and ask it to transcribe and
   describe tone. The question asked ("does it say anything about tone?") cannot be answered
   without the weights.
 
-## 9. Clean-up check
+## 9. Not measured
 
-21:54:47: no `tts_bench|stt_bench|coresident|mlx_audio.server|server_test`
-process left; no other process mentioning `mlx`; `/running` shows only the other session's
-qwen38; the server on :18800 was stopped after each run (`pgrep -f mlx_audio.server` → 0, checked 4 times). Every
-measurement ran in its own process, so all model memory was released at exit; `vm_stat` free pages 722534 (11 GiB)
-afterwards. Nothing was installed system-wide or into the user's venvs; the only additions are under `measure/`
-(`bench/venv-kokoro` with misaki, spacy, en_core_web_sm, phonemizer, espeakng-loader, a `.pth` to the clone and a
-`sitecustomize.py`) and the Kokoro weights in the Hugging Face cache (372 MB, the one download allowed).
-
-## 10. Could not measure
-
-- **Qwen3-TTS 1.7B VoiceDesign (MLX)**: only metadata cached; 4.52 GB download needed. Measured CustomVoice 1.7B instead.
+- **Qwen3-TTS 1.7B VoiceDesign (MLX)**: only metadata cached (4.52 GB of weights). Measured CustomVoice 1.7B instead.
 - **Qwen3-TTS 0.6B in MLX form from mlx-community**: no VoiceDesign-bf16 0.6B exists on the hub (404); the original
   Qwen/ 0.6B CustomVoice checkpoint was measured through mlx-audio's on-load conversion.
 - **Qwen3-Omni-30B-A3B-Instruct-8bit**: weights absent (38.8 GB). Runtime (mlx-vlm 0.7.4 with `qwen3_omni_moe`,
-  audio tower and talker) is present in `~/repos/local-decision/.venv`. No load time, TTFT, tok/s, memory or
+  audio tower and talker) is installed. No load time, TTFT, tok/s, memory or
   tone-description result.
 - **Live streaming STT**: Parakeet has no feed/step session in mlx-audio; only `nemotron_asr` implements
   `StreamingSession`, and no Nemotron ASR weights are cached. Measured chunked decoding of a finished buffer instead.
 - **Strictly idle machine for every phase**: the three TTS phases ran with the LLM unloaded; the rest ran with the
-  LLM resident but idle (no requests for 9–15 min), see section 0. The first Parakeet run was contended and is marked.
+  LLM resident but idle (no requests), see section 0. The first Parakeet run was contended and is marked.
 - **Kokoro with its espeak-ng fallback**: `misaki.espeak.EspeakFallback` aborts the process (espeak-ng data path
   baked in at the wheel's build: "Error processing file '<build-machine>/runner/work/espeakng-loader/.../phontab'"; setting
   `ESPEAK_DATA_PATH` did not help). Disabled it, so out-of-dictionary words would be skipped; the test texts had none
   (transcripts came back verbatim).
-- **TTS beside a decoding LLM**: not run (would have meant sending the LLM a chat request, which the plan forbade).
+- **TTS beside a decoding LLM**: not run (the bench sends no LLM requests).
   The 10× slowdown of the render-contended Parakeet run is the only contention data point.
-- **Pi's tts daemon end-to-end** (socket → sentence split → batch → afplay): not measured; its engine does not use
-  `stream=True` (section 2).
+- **A non-streaming TTS daemon end-to-end** (socket → sentence split → batch → afplay): not measured; such an engine
+  does not use `stream=True` (section 2).
 - **`response_format: pcm` / mp3 chunk framing on the server**: only `wav` exercised.
 - **Server curl `time_starttransfer`**: measured (1–3 ms) but meaningless as first-audio because headers are committed
   before generation; the Python chunk trace is the first-audio number (0.121 s).

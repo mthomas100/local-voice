@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""qwen38_voice_tooluse_test.py: which local brain suits voice? Prepared 2026-10-05 (05c); run the same day (results/).
+"""qwen38_voice_tooluse_test.py: which local brain suits voice? Run 2026-10-05; findings in voice-brain-test.md.
 
 It runs 13 voice-style requests through Pi's RPC mode on the real rig, for each model in turn: 10 in the `home`
 space (cwd ~, tools read,grep,find,ls,kb) and 3 in a fresh `git clone` of Atlas (tools read,grep,find,ls,bash). Per
@@ -9,7 +9,7 @@ words, and leaks into the spoken reply: thinking (reasoning deltas, <think> tags
 musings it also checks that the capture ran before the first spoken word and that the bytes saved equal the
 transcript.
 
-GPU RULE. It does nothing unless ~/repos/local-voice/measure/bench/gpu_clear.sh exits 0 right before it starts
+GPU RULE. It does nothing unless measure/bench/gpu_clear.sh (VOICE_TEST_GPU_CLEAR) exits 0 right before it starts
 (exit code 75 otherwise). It checks once, at the start: once running it is itself the LLM traffic gpu_clear.sh
 watches for. It never runs inside a `hold` (a hold closes the gate to LLM calls); hold.ts is loaded, so if a
 render takes the GPU mid-run the turn waits, and the request is marked `held` and its timings invalid.
@@ -20,19 +20,19 @@ model and costs a reload (13-17 s for a big model, measured 2026-09-11); the fir
 flagged `first_after_switch` and its time includes that load. At the end it requests local/qwen38 once more
 (`restore`), so the rig is left on its usual default. qwen38 is served by ds4-server, qwen27-262k by llama-server
 b10869 (--jinja): Pi sends both `thinking: {type: "disabled"}` for --thinking off (provider compat
-thinkingFormat "deepseek", measured against a stub in 05c E7). ds4-server honours that field (ds4_server.c reads
+thinkingFormat "deepseek", measured against a stub). ds4-server honours that field (ds4_server.c reads
 "thinking"); whether llama-server does is not verified, and the thinking_chars column answers it. If qwen27 leaks
 thinking, rerun with --qwen27-compat qwen-chat-template, which sends chat_template_kwargs.enable_thinking=false.
 
 ISOLATION. A throwaway PI_CODING_AGENT_DIR (models.json copied from ~/.pi/agent/models.json, so the `local`
 provider is the live gate on :8090; no packages), --no-extensions plus explicit hold.ts, kb.ts, today.ts and
-the prototype voice_gate.ts. KB_HOME is a fresh `git clone` of ~/kb under the state dir, searched with ripgrep
+the prototype voice_gate.ts. KB_HOME is a fresh `git clone` of $KB_HOME (default ~/wiki) under the state dir, searched with ripgrep
 (KB_SEARCH_BACKEND=rg) unless --kb-backend qmd. Atlas is `git clone`d with its push URL disabled; atlas.py runs
-only in the clone. Any confirm request is answered "no" and recorded. Nothing is written to ~/kb, the real Atlas
-or ~/.pi/agent. Results: research-prototypes/pi_rpc_bridge/results/voice-tooluse-<time>.{json,md}; transcripts
-and clones: ~/repos/local-voice/state/voice-tooluse/<time>/ (gitignored). Replies and tool arguments are stored.
+only in the clone. Any confirm request is answered "no" and recorded. Nothing is written to the real knowledge base,
+the real Atlas or ~/.pi/agent. Results: research-prototypes/pi_rpc_bridge/results/voice-tooluse-<time>.{json,md}
+(gitignored); transcripts and clones: state/voice-tooluse/<time>/ in this repo (gitignored). Replies and tool arguments are stored.
 
-LEGS (added 2026-10-05 08:58 for the GPU phase). `--legs model:placement[:compat] ...` runs several configurations
+LEGS. `--legs model:placement[:compat] ...` runs several configurations
 in one guarded run, e.g. `local/qwen38:append local/qwen38:replace local/qwen27-262k:append`. `--compat-on-leak`:
 when a qwen27 leg leaks thinking with --thinking off, that leg is rerun with thinkingFormat qwen-chat-template and
 later qwen27 legs use it from the start. Between requests the run re-checks gpu_clear.sh's gpu_jobs and hold
@@ -72,12 +72,13 @@ from pi_rpc_bridge import (ConfirmRequest, Notify, PiChild, PiError, Retry, Spac
                            ThinkingDelta, ToolCallStarted, ToolEnd, ToolStart, Settled, atlas_capture_command)
 
 HOME = Path.home()
-GPU_CLEAR = Path(os.environ.get("VOICE_TEST_GPU_CLEAR", HOME / "repos/local-voice/measure/bench/gpu_clear.sh"))
+REPO = HERE.parents[1]                                            # the local-voice checkout
+GPU_CLEAR = Path(os.environ.get("VOICE_TEST_GPU_CLEAR", REPO / "measure/bench/gpu_clear.sh"))
 REAL_MODELS = HOME / ".pi/agent/models.json"
 REAL_EXT = HOME / ".pi/agent/extensions"
-ATLAS_REAL = Path(os.environ.get("ATLAS_REPO", HOME / "atlas"))   # the journal repo; cloned, never written
-KB_REAL = Path(os.environ.get("KB_HOME", HOME / "kb"))
-STATE = HOME / "repos/local-voice/state/voice-tooluse"
+ATLAS_REAL = Path(os.environ.get("ATLAS_REPO", HOME / "journal"))   # the journal repo; cloned, never written
+KB_REAL = Path(os.environ.get("KB_HOME", HOME / "wiki"))
+STATE = REPO / "state/voice-tooluse"
 RESULTS = HERE / "results"
 EX_TEMPFAIL = 75
 TURN_TIMEOUT_S = 420.0
@@ -305,7 +306,7 @@ def stub_scripts(leak: bool = False, spaces=("home", "atlas")) -> list[dict]:
             continue
         if r.space == "home" and r.expected:
             args = {"kb": {"args": ["search", "hold gate"]}, "ls": {"path": "repos"}, "find": {"pattern": "SPACES.md", "path": "repos/local-voice"},
-                    "read": {"path": "repos/local-voice/README.md"}, "grep": {"pattern": "barge-in", "path": "repos/local-voice/SPEC.md"}}[r.expected[0]]
+                    "read": {"path": "repos/local-voice/README.md"}, "grep": {"pattern": "barge-in", "path": "repos/local-voice/docs/PROTOCOL.md"}}[r.expected[0]]
             q.append({"tool_calls": [{"name": r.expected[0], "arguments": args}], "pre_delay_ms": 30})
         if r.capture:
             words = r.prompt[len(r.prefix_ok):] if r.prefix_ok else r.prompt

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""stub_llm.py: a scriptable stand-in for llama-swap / llama-server (05c, 2026-10-05).
+"""stub_llm.py: a scriptable stand-in for llama-swap / llama-server (2026-10-05).
 
 Pi's `local` provider talks OpenAI chat completions to it exactly as it talks to the rig, and gets back
 the SSE chunk shapes llama.cpp emits with --jinja: a first chunk {"role":"assistant","content":null};
@@ -160,7 +160,7 @@ def _handler(state: _State):
                 sent += 1
 
             base = {"id": f"chatcmpl-{uuid.uuid4().hex[:12]}", "object": "chat.completion.chunk",
-                    "created": int(time.time()), "model": model, "system_fingerprint": "stub-05c"}
+                    "created": int(time.time()), "model": model, "system_fingerprint": "stub"}
             delay = float(script.get("delay_ms", 0)) / 1000.0
             words = int(script.get("chunk_words", 1))
             try:

@@ -4,7 +4,7 @@ Both run every model call on the MLX worker (mlx_worker.py) and keep the user's 
 GPU work: the utterance goes to the session's hold coordinator, which transcribes it once the gate opens (PROTOCOL.md
 "Held GPU": keep the transcript if it can, run the turn when the hold ends).
 
-Pipecat 1.12.0 facts used here (note 04c §6): VAD frames reach the STT twice, downstream from the transport for
+Pipecat 1.12.0 facts used here: VAD frames reach the STT twice, downstream from the transport for
 push-to-talk and upstream from the user aggregator for open mic, so both directions are handled; a TranscriptionFrame
 marked finalized lets the Smart Turn stop strategy end the turn without waiting out ttfs_p99_latency.
 

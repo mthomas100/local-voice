@@ -23,7 +23,7 @@ switches:
   - {say: "Okay, um, go to my journal and add a note that the garden was quiet.", want: atlas,
      rest: "add a note that the garden was quiet."}
   - {say: "I want to go to my journal.", want: atlas, rest: ""}
-  - {say: "Can we switch to the kb?", want: kb, rest: ""}
+  - {say: "Can we switch to the wiki?", want: kb, rest: ""}
   - {say: "Please open the atlas.", want: atlas, rest: ""}
   - {say: "Jump into my journal.", want: atlas, rest: ""}
   - {say: "Go into the knowledge base and search for heat pumps.", want: kb, rest: "search for heat pumps."}
@@ -34,7 +34,7 @@ switches:
   - {say: "Open up my notes.", want: atlas, rest: ""}
   - {say: "Pull up the wiki.", want: kb, rest: ""}
   - {say: "Go to my journal, note this: the garden was quiet.", want: atlas, rest: "note this: the garden was quiet."}
-  - {say: "Go to my journal or the kb.", want: ask, rest: ""}
+  - {say: "Go to my journal or the wiki.", want: ask, rest: ""}
 negatives:
   - {say: "What's in my atlas folder?"}
   - {say: "Open my atlas folder."}
@@ -44,14 +44,14 @@ negatives:
   - {say: "Open the journal entry from yesterday."}
   - {say: "Go to sleep."}
   - {say: "I want to go to sleep."}
-  - {say: "The kb says what about heat pumps?"}
+  - {say: "The wiki says what about heat pumps?"}
   - {say: "Home is where the heart is."}
   - {say: "Can you open my notes app?"}
   - {say: "I went to my journal club last night."}
   - {say: "How do I go to the voice project settings?"}
   - {say: "Search the wiki for heat pumps."}
   - {say: "Is my journal backed up?"}
-  - {say: "Open the kb page about the hold gate."}
+  - {say: "Open the wiki page about heat pumps."}
   - {say: "Take me through the atlas files."}
   - {say: "Let's talk about my journal."}
   - {say: "Um, my journal is getting long."}

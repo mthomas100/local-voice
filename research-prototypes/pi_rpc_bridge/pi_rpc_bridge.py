@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""pi_rpc_bridge: drive Pi's JSONL RPC mode from asyncio, one Pi child per space (05c prototype, 2026-10-05).
+"""pi_rpc_bridge: drive Pi's JSONL RPC mode from asyncio, one Pi child per space (prototype, 2026-10-05).
 
-What it does, all verified against Pi 0.99.1 and a stub LLM (research note 05c):
+What it does, all verified against Pi 0.99.1 and a stub LLM:
   * spawns `pi --mode rpc` with the space's cwd, model, thinking level, tools, skills, extensions and
     session directory (RPC has no cwd or env field, so a space is a process);
   * sends commands with ids and matches responses by id (Pi answers asynchronously, so order is not
@@ -18,7 +18,7 @@ What it does, all verified against Pi 0.99.1 and a stub LLM (research note 05c):
     inside Pi, so a slow answer is harmless;
   * SpacePool keeps one child per space, starts it lazily, resumes its session with --continue.
 
-Pitfalls handled here (see 05c): asyncio's StreamReader splits lines only on b"\\n" but caps a line at
+Pitfalls handled here: asyncio's StreamReader splits lines only on b"\\n" but caps a line at
 64 KiB by default, while Pi's message_end, tool and get_messages records exceed that, so the limit is
 raised; stdout and stderr are drained continuously because Pi blocks when a pipe fills; the child gets
 its own process group so a hard kill also takes the bash tool's children.
@@ -368,7 +368,7 @@ class TurnResult:
 class PiChild:
     """One `pi --mode rpc` process. Single consumer of its event stream.
 
-    Turn hygiene (05c E10, after the 04c review): Pi writes an aborted run's tail (message_end "aborted",
+    Turn hygiene: Pi writes an aborted run's tail (message_end "aborted",
     turn_end, agent_end, agent_settled) before abort's own response, so those records sit in the queue when an
     abort returns, and a fire-and-forget abort may still be in flight when the next turn starts. Therefore:
     every event is stamped with the turn it was read in; turn() first quiesces (waits for any pending
@@ -587,7 +587,7 @@ class PiChild:
                      timeout: float | None = None) -> str:
         """The raw prompt command. Use turn() for a user turn: it quiesces first and filters stale events.
 
-        Pi answers `prompt` only after every before_agent_start handler has returned (05c): film-rig.ts holds
+        Pi answers `prompt` only after every before_agent_start handler has returned: film-rig.ts holds
         there for a whole render, with no response and no agent_start meanwhile. Hence no timeout by default;
         watch the event stream (a Notify says why) instead."""
         if self._heard is not None and streaming_behavior is None:

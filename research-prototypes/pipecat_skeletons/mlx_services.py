@@ -2,7 +2,7 @@
 
 Construct-only skeletons: the engines are protocols, and the fakes at the bottom let everything construct and
 import without loading a model. The real engines (Parakeet per utterance, Qwen3-TTS streaming, Kokoro) belong
-to the orchestrator and follow research note 09c for the mlx-audio 0.5.7 calls.
+to the orchestrator and follow measure/mlx-audio-api.md for the mlx-audio 0.5.7 calls.
 
 Facts this file relies on (pipecat-ai 1.12.0, file:line in the installed package):
 - SegmentedSTTService buffers audio between VADUserStartedSpeakingFrame and VADUserStoppedSpeakingFrame,
@@ -27,7 +27,7 @@ Facts this file relies on (pipecat-ai 1.12.0, file:line in the installed package
   (max_consecutive_zero_audio_contexts=3, tts_service.py:172-174, 230-238). Never return zero audio for
   non-empty text; trim silence, do not drop everything.
 - pipecat.audio.utils.detect_speech_onset (audio/utils.py:327-367) is the same RMS onset detector the TTFA
-  metric uses; it trims the leading silence that Qwen3-TTS 0.6B adds (~0.42 s, measured in measure/09-phase1-report.md).
+  metric uses; it trims the leading silence that Qwen3-TTS 0.6B adds (~0.42 s, measured in measure/phase1.md).
 """
 
 from __future__ import annotations

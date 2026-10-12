@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import re
 import statistics
 import subprocess
@@ -37,6 +38,7 @@ sys.path.insert(0, str(HERE))
 PROMPTS = ["What is the capital of France?", "Say hello in Spanish.", "What color is the sky on a clear day?",
            "Name a fruit that is yellow.", "What is the opposite of cold?", "Which animal says moo?",
            "What is two plus two?", "Name a colour of the rainbow."]
+KB_REAL = Path(os.environ.get("KB_HOME", "~/wiki")).expanduser()   # cloned for the run, never written
 LLAMA_SWAP = "http://127.0.0.1:8091"           # read only: /logs/stream/upstream (ds4-server's own lines)
 DS4_LINE = re.compile(r"^\d{4} (\d\d:\d\d:\d\d) ds4-server: chat ctx=(\d+)\.\.(\d+):(\d+) (?:TOOLS )?prompt done ([\d.]+)s")
 
@@ -181,9 +183,9 @@ async def main() -> None:
 
     kb = Path(a.kb) if a.kb else out / "kb"
     if not kb.exists():
-        subprocess.run(["git", "clone", "--quiet", "--no-hardlinks", str(Path.home() / "kb"), str(kb)], check=True)
+        subprocess.run(["git", "clone", "--quiet", "--no-hardlinks", str(KB_REAL), str(kb)], check=True)
         subprocess.run(["git", "-C", str(kb), "remote", "set-url", "--push", "origin", "DISABLED-probe-clone"], check=True)
-    assert kb.resolve() != (Path.home() / "kb").resolve(), "KB_HOME must be a copy"
+    assert kb.resolve() != KB_REAL.resolve(), "KB_HOME must be a copy"
     cfg = load_config(overrides={"state_dir": str(out / "state"),
                                  "pi": {"env": {"KB_HOME": str(kb), "KB_SEARCH_BACKEND": "rg", "UV_OFFLINE": "1"}},
                                  "brain": {"turn_log_dir": str(out / "turns"), "state_dir": str(out / "brain")}})

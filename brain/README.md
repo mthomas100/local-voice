@@ -7,7 +7,7 @@ Atlas-style markdown journal repo (one with an `atlas.py` CLI); and one or two s
 conversation, or nothing at all (`NO_REPLY`). It never speaks, never loads a speech model, and never asks the model
 anything while the GPU is held or busy.
 
-Built 2026-10-05 against a stub LLM, real Pi, a git clone of a kb repo and a git clone of an Atlas journal. It has
+Built 2026-10-05 against a stub LLM, real Pi, a git clone of a knowledge-base repo and a git clone of an Atlas journal. It has
 not yet met a real model or a real day of conversation.
 
 ## How a heartbeat goes
@@ -24,8 +24,8 @@ launchd runs `brain/run.sh` every 30 minutes (modelled on OpenClaw's heartbeat a
    flag skips it (`--force` skips only the first three checks). A missing script counts as BUSY.
 3. **The technical pass.** The day's turns outside the Atlas space go to the model through `pi --mode json` with no
    tools at all. It answers with JSON: facts (decision, preference, finding, todo, question), each citing the turns it
-   came from, and a spoken line or `NO_REPLY`. The run loads the kb's own Pi adapter (`kb.ts`), so Pi registers and
-   closes it as a `pi:` session in the kb exactly like any other Pi session.
+   came from, and a spoken line or `NO_REPLY`. The run loads the knowledge base's own Pi adapter (`kb.ts`), so Pi registers and
+   closes it as a `pi:` session in the knowledge base exactly like any other Pi session.
 4. **The life pass.** Only the user's own words from the Atlas space, and only those found verbatim in the Atlas note
    they were captured to, go to a second Pi run (no tools, no kb adapter). It drafts at most three reflections: exact
    quotes, one observation, a question or two.
@@ -50,7 +50,7 @@ other than qwen38 it makes one tiny call to load qwen38 again, so the morning's 
 
 ## Why it writes where it writes
 
-- **The kb's session lane, not wiki pages.** The kb treats session material as operational memory: it
+- **The knowledge base's session lane, not wiki pages.** The knowledge base treats session material as operational memory: it
   becomes knowledge only when a human promotes a distilled note, and raw transcripts never become topic evidence. So
   facts are notes on a session digest (`.sessions/digests/…/pi-voice-brain-…md`),
   each one line with its kind and the voice turns it came from, ready to promote by copying. The brain never writes a
@@ -64,7 +64,7 @@ other than qwen38 it makes one tiny call to load qwen38 again, so the morning's 
   background job would commit the user's half-finished edits, and any sync placeholder state, under the brain's name. The
   brain commits only its new page (`git commit -- inbox/<page>`, atlas-review's precedent), then proves the commit
   holds that one file and that the rest of the working tree is exactly as it was. It never pushes.
-- **Two passes.** The technical pass never sees a turn of the Atlas space, so life content cannot reach the kb even if
+- **Two passes.** The technical pass never sees a turn of the Atlas space, so life content cannot reach the knowledge base even if
   the model misbehaves; the life pass never sees the assistant's replies, so it cannot quote the assistant as the
   user.
 
@@ -81,7 +81,7 @@ other than qwen38 it makes one tiny call to load qwen38 again, so the morning's 
 
 State, all under the repo's gitignored `state/brain/`: `ledger.json` (each day's status and writes),
 `heartbeat.log` (one line per heartbeat), `days/<day>/` (the exact prompts, the model's replies, the validated
-proposal, `report.md`), `pi-sessions/` (the reflection runs' Pi transcripts, which the kb digest's
+proposal, `report.md`), `pi-sessions/` (the reflection runs' Pi transcripts, which the knowledge base digest's
 `transcript_path` points at), `outbox/`.
 
 ## Commands

@@ -117,7 +117,7 @@ GPU_CLEAR = str(REPO / "measure" / "bench" / "gpu_clear.sh")
 RUN_SH = ORCH / "run.sh"               # what ScratchServer starts (the tests start a fake in its place)
 OUT_ROOT = REPO / "state" / "echo-bench"
 SCRATCH = OUT_ROOT / "scratch"         # shared by runs: make_scratch keeps its clones (kb, spaces) from run to run
-PORT, BROWSER_PORT, STUB_PORT = 8771, 7861, 7861   # the two ports this work may use (lead, 2026-10-05)
+PORT, BROWSER_PORT, STUB_PORT = 8771, 7861, 7861   # fixed ports, apart from a running server's 8770/7860
 
 # --------------------------------------------------------------------------------------------- the words
 

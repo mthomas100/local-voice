@@ -2,7 +2,7 @@
 # gpu_clear.sh — quiet GPU check for the voice project (2026-10-05). Prints one status line; exit 0 only when:
 #   the hold gate is open (or not installed), no GPU job process runs (renders, image/3D generation, the sibling video
 #   and 3D rigs), and the local LLM is unloaded or has had no request for >= 120 s.
-# Same rules as gate.sh, without writing to the measurement log, so a waiter can poll it.
+# Same rules as gate.sh, without writing to the gate log, so a waiter can poll it.
 HOLD=${HOLD_BIN:-$HOME/.local/bin/hold}
 pat='ltx-2-mlx generat[e]|mflux-generat[e]|hy3d|run-queue[.]sh|story[.]sh|redo[.]sh|bin/vidgen|reel-studio|reel (animate|still|music|voice|cut|render)|m3d (generate|rig|animate)'
 n=0; for p in $(pgrep -f "$pat"); do ps -o args= -p $p 2>/dev/null | grep -q 'shell-snapshots' || n=$((n+1)); done

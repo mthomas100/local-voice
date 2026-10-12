@@ -1,14 +1,14 @@
-// voice_mode.ts: conversation vs act mode as an extension command (05c prototype, 2026-10-05).
+// voice_mode.ts: conversation vs act mode as an extension command (prototype, 2026-10-05).
 //
 // Pi's --tools is an allowlist of what gets REGISTERED: a tool left out of it cannot be activated later
-// (setActiveTools ignores unknown names; measured in 05c). So the child is spawned with every tool the space
+// (setActiveTools ignores unknown names; measured against Pi 0.99.1). So the child is spawned with every tool the space
 // may ever use (--tools = tools + act_tools) and this extension narrows the active set to VOICE_TOOLS at
 // session_start. `/voice-mode act` activates everything the child registered; `/voice-mode conversation`
 // goes back to VOICE_TOOLS. The orchestrator sends the command as a `prompt`: Pi runs extension commands at
 // once, even during a run, and answers disposition "handled" with no model call. The new mode is reported
 // with setStatus("voice-mode", ...), an extension_ui_request the orchestrator can show.
 //
-// Cost (05c E7b): the active set is rendered into the system message's <tools> section and the request's
+// Cost: the active set is rendered into the system message's <tools> section and the request's
 // tools array, both at the head of the prompt, so the first request after a switch re-processes the whole
 // conversation on llama.cpp / ds4 (no prefix-cache hit). Switch modes rarely, not per turn.
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";

@@ -19,6 +19,7 @@ the clones (and whatever the last run wrote). Run it as `./run.sh --scratch DIR 
 """
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -27,7 +28,7 @@ import yaml
 
 from .config import DEFAULT_CONFIG, ConfigError, deep_merge, expand
 
-KB_SOURCE = Path("~/kb").expanduser()
+KB_SOURCE = Path(os.environ.get("KB_HOME", "~/wiki")).expanduser()   # the knowledge base to clone
 # Keys of config.yaml that hold paths, relative to the config file's folder (config.expand's rule).
 PATH_KEYS = ("agent.spaces_file", "agent.persona_file", "pi.models_source", "brain.outbox_module")
 

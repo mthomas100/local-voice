@@ -33,5 +33,5 @@ node_modules/
 # measure/bench: venvs built by setup.sh and per-run outputs of run_remaining.sh (2026-10-05)
 .venv-*/
 measure/bench/results/
-# the bench log written by measure/bench/log.sh (local run detail)
-measure/raw/09-measurements-log.md
+# per-run results of the local-model voice tool-use test
+research-prototypes/pi_rpc_bridge/results/

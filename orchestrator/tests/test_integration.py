@@ -169,7 +169,7 @@ async def _barge_in_mid_generation(r, after_s: float = 0.0):
 
 
 async def test_a_barge_in_mid_generation_lets_the_run_finish_silently_and_keeps_it(tmp_path):
-    """brief step 4: the run is not aborted, so the next request carries the whole first reply and extends what the
+    """The run is not aborted, so the next request carries the whole first reply and extends what the
     LLM server already holds (ds4 replays its recurrent state from a checkpoint otherwise: 9-28 s on 2026-10-05)."""
     first = "Sure thing, here we go. " + " ".join(f"word{i}" for i in range(1, 25)) + "."
     async with rig(tmp_path, stt_script=["tell me something", "stop, what time is it"], tts_rtf=0.5) as r:

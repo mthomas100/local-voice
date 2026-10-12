@@ -17,7 +17,13 @@ def temp_config(tmp_path: Path, gate_url: str) -> Path:
     raw = yaml.safe_load((HERE / "config.yaml").read_text())
     raw["state_dir"] = str(tmp_path / "state")
     raw["hold"]["gate"] = gate_url
-    raw["agent"]["spaces_file"] = str(HERE / "spaces.yaml")
+    # the repo's spaces.yaml, cut to a home space that needs nothing machine-specific (no journal, wiki or named skills)
+    spaces = yaml.safe_load((HERE / "spaces.yaml").read_text())
+    home = spaces["spaces"]["home"]
+    home.update(skills="auto", tools=[t for t in home["tools"] if t != "kb"])
+    spaces["spaces"] = {"home": home}
+    (tmp_path / "spaces.yaml").write_text(yaml.safe_dump(spaces))
+    raw["agent"]["spaces_file"] = str(tmp_path / "spaces.yaml")
     raw["agent"]["persona_file"] = str(HERE / "persona.md")
     raw["pi"]["extensions"]["voice_gate"] = str(HERE / "pi/voice_gate.ts")
     raw["pi"]["extensions"]["voice_mode"] = str(HERE / "pi/voice_mode.ts")

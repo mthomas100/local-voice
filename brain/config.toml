@@ -34,11 +34,11 @@ max_prompt_chars = 120000            # about 30k tokens; the oldest replies are 
 
 [kb]
 enabled = true
-home = "~/kb"                        # KB_HOME of an optional `kb` knowledge base; the binary is <home>/bin/kb and the Pi adapter <home>/adapters/pi/kb.ts
+home = "~/wiki"                      # KB_HOME of an optional `kb` knowledge base; the binary is <home>/bin/kb and the Pi adapter <home>/adapters/pi/kb.ts
 
 [atlas]
 enabled = true
-root = "~/atlas"                     # an Atlas-style markdown journal repo with atlas.py; set enabled = false without one
+root = "~/journal"                   # an Atlas-style markdown journal repo with atlas.py; set enabled = false without one
 space = "atlas"                      # spaces.yaml name of the space whose turns are life content
 by = "voice-brain"                   # the `by:` of the inbox pages (anything but `me` marks an agent's page)
 

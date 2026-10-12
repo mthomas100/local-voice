@@ -1,5 +1,5 @@
 """Fixtures for the brain's tests: the stub LLM from the due-diligence prototypes, a throwaway Pi agent dir pointed at
-it, git clones of ~/kb and of Atlas in temporary directories (no remote, so nothing can be pushed), a fake
+it, git clones of the knowledge base (KB_HOME) and of Atlas (ATLAS_REPO) in temporary directories (no remote, so nothing can be pushed), a fake
 gpu_clear.sh, and a Config whose every path is inside the test's tmp dir.
 
 Nothing here reaches 127.0.0.1:8090, ~/.pi/agent, the real knowledge base or the real journal: the clones are read
@@ -27,8 +27,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from local_voice_brain import config as cfgmod  # noqa: E402
 from stub_llm import StubLLM  # noqa: E402
 
-REAL_KB = Path(os.environ.get("KB_HOME", Path.home() / "kb"))
-REAL_ATLAS = Path(os.environ.get("ATLAS_REPO", Path.home() / "atlas"))
+REAL_KB = Path(os.environ.get("KB_HOME", Path.home() / "wiki"))
+REAL_ATLAS = Path(os.environ.get("ATLAS_REPO", Path.home() / "journal"))
 PI = shutil.which("pi")
 
 # The rig's `local` provider as ~/.pi/agent/models.json declared it on 2026-10-05 (read, not copied: the compat

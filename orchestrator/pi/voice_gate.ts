@@ -1,4 +1,4 @@
-// voice_gate.ts: the per-space risk gate from SPACES.md as a Pi extension (05c prototype, 2026-10-05).
+// voice_gate.ts: the per-space risk gate from SPACES.md as a Pi extension (prototype, 2026-10-05).
 //
 // Every tool call is allowed, asked about, or refused, by the space's tier (env, set per child):
 //   readonly  read-only tools run; anything else is refused without asking.
@@ -19,7 +19,7 @@
 // Env: VOICE_TIER (readonly|ask|trusted, default ask), VOICE_CONFIRM_TIMEOUT_MS (default 20000; a backstop behind the
 // orchestrator's own wait), VOICE_BASH_ALLOW and VOICE_WRITE_ALLOW (JSON arrays of globs; write globs are relative to
 // the root), VOICE_READ_TOOLS (comma list, default read,grep,find,ls), VOICE_DENY_TERMINATES=1 to stop the run after a
-// refusal instead of letting the model answer it, KB_HOME (the knowledge base kb.ts uses, default ~/kb), VOICE_SPACE
+// refusal instead of letting the model answer it, KB_HOME (the knowledge base kb.ts uses, default ~/wiki), VOICE_SPACE
 // and VOICE_SPACE_DESC (the space's name, and its root as said aloud: "your atlas journal").
 //
 // Two speed rules for a spoken turn (M1 e2e, 2026-10-05: one tool turn took 2 min 10 s). kb prints a page's path
@@ -84,7 +84,7 @@ const DENY_TERMINATES = process.env.VOICE_DENY_TERMINATES === "1";
 const BUDGET_CALLS = Number(process.env.VOICE_TOOL_BUDGET_CALLS ?? 0);
 const BUDGET_S = Number(process.env.VOICE_TOOL_BUDGET_S ?? 0);
 const CONVERSATION_TOOLS = new Set((process.env.VOICE_TOOLS ?? "").split(",").map((s) => s.trim()).filter(Boolean));
-const KB_HOME = path.resolve(process.env.KB_HOME ?? path.join(os.homedir(), "kb"));
+const KB_HOME = path.resolve(process.env.KB_HOME ?? path.join(os.homedir(), "wiki"));
 const SHELL_CONTROL = /[;&|`$<>\\(){}\r\n]/;
 
 function jsonList(s: string | undefined): string[] {
@@ -119,10 +119,10 @@ export function simpleHead(command: string): string | null {
 
 /** `cd <dir> && rest`, where <dir> is the space root or inside it, returns `rest`; anything else returns null.
  *  Models add this prefix even when the cwd already is the root: qwen38 wrapped every Atlas capture in
- *  `cd <atlas root> && python3 atlas.py capture ...` or `cd "$(pwd)" && ...` (05d, 2026-10-05), which the bare
+ *  `cd <atlas root> && python3 atlas.py capture ...` or `cd "$(pwd)" && ...` (seen in the voice brain test, 2026-10-05), which the bare
  *  check sent to a spoken confirmation on every musing. Only one leading cd is stripped; what follows gets the
  *  full check. */
-// `cd` to the current directory spelled the ways models spell it (qwen38 wrote `cd "$(pwd)" && ...`, 05d): exact
+// `cd` to the current directory spelled the ways models spell it (qwen38 wrote `cd "$(pwd)" && ...` in the voice brain test): exact
 // literal forms only, so no other expansion can ride along.
 const CD_HERE = /^\s*cd\s+(?:"\$\(pwd\)"|\$\(pwd\)|"\$PWD"|\$PWD|"\$\{PWD\}"|\$\{PWD\}|\.\/?)\s*&&\s*/;
 
@@ -482,7 +482,7 @@ export default function voiceGate(pi: ExtensionAPI) {
     if (!ctx.hasUI) return { block: true, reason: `${event.toolName} needs a yes and there is nobody to ask`, terminate: DENY_TERMINATES };
     const choices = v.approval.scope ? ["allow_once", "allow_session", "deny"] : ["allow_once", "deny"];
     // signal: an abort (the user barged in) dismisses the dialog at once. Without it the abort waits until the
-    // dialog times out (05c E10). The timeout is a backstop: the orchestrator answers `timeout` itself before it.
+    // dialog times out. The timeout is a backstop: the orchestrator answers `timeout` itself before it.
     const answer = await ctx.ui.select(JSON.stringify({ lv: "approval", v: 1, ...v.approval }), choices,
                                        { timeout: TIMEOUT_MS, signal: ctx.signal });
     return answerVerdict(answer);

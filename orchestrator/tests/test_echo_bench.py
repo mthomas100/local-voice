@@ -3,7 +3,7 @@
 Every property the bench's numbers rest on is measured here on synthetic signals instead of trusted: the echo's delay
 to the sample, its level to a tenth of a dB, the resampler's gain, timing and stopband, the room's decay and energy,
 the noise floor's level and slope, the simulated player's timeline, and frame-by-frame rendering equal to rendering at
-once. Then the plan against the brief, the config a scratch server reads, the routed stub, the metrics and the report
+once. Then the bench's plan, the config a scratch server reads, the routed stub, the metrics and the report
 on canned streams, and two ends to end: an EchoClient against a fake protocol v1 server (the echo arrives on the wire
 at its delay and level), and scenarios against the model-free orchestrator (tests/harness.py: an echo at -10 dB makes
 the energy VAD barge in with nothing planted, the same reply with no echo or at -30 dB plays to its end).

@@ -1,12 +1,12 @@
 """Kokoro 82M through mlx-audio 0.5.7 (the fallback voice: the latency floor, no cloning, no instruct).
 
-Measured here (09b §2, §5): 74-79 ms for a whole sentence, RTF 0.02, 0.3 GiB; its first call in a process costs
+Measured here (measure/phase2.md §2, §5): 74-79 ms for a whole sentence, RTF 0.02, 0.3 GiB; its first call in a process costs
 0.8-4.3 s (kernels and G2P), so it is warmed at start. Kokoro has no streaming inside a segment, so a long sentence
 is cut at clause punctuation (`clause_chars`) and each piece is one call, which brings the first audio forward.
 
 Kokoro's G2P is misaki (the `kokoro` extra in pyproject.toml). misaki's EspeakFallback aborts the process on this
 Mac (espeakng-loader's data path is baked in at build time), so load() makes its constructor raise and KokoroPipeline
-takes its own except branch: out-of-dictionary words are skipped rather than spoken (measure/bench/setup.sh, 09c §6).
+takes its own except branch: out-of-dictionary words are skipped rather than spoken (measure/bench/setup.sh, measure/mlx-audio-api.md §6).
 """
 from __future__ import annotations
 

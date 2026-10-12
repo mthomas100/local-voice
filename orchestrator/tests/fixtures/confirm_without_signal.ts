@@ -1,4 +1,4 @@
-// Test fixture (05c): an extension that asks before every bash call WITHOUT passing ctx.signal to the dialog,
+// Test fixture: an extension that asks before every bash call WITHOUT passing ctx.signal to the dialog,
 // as third-party extensions may. An abort alone then waits until the dialog times out (20 s here); the bridge's
 // interrupt also cancels open dialogs so the run settles at once.
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";

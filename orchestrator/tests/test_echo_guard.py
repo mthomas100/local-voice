@@ -15,22 +15,22 @@ ROOT = Path(__file__).resolve().parents[1]
 
 # A synthetic reply, and its last words heard back the way a recogniser writes replayed audio (slips, its own breaks)
 REPLY = ("Let me dig into the garden plan I keep. I plan from ~/garden/beds: a seed list picks the beds and the order, "
-         "then tomatoes, peppers, beans, herbs, and a compost heap layer on top. I couldn't check inside each "
-         "one — want the full breakdown?")
+         "then tomatoes, peppers, beans, herbs, and a compost heap layer on top. I haven't looked at each "
+         "bed's soil yet — want the full rundown?")
 ECHOES = ["And a compost heap layer on top.", "Peppers beans herbs and a compost heap layer on top.",
-          "I couldn't check inside each one. Want a full breakdown.",
-          "Those peppers beans herbs and a compost heap layer on top.", "I couldn't check inside each. One."]
+          "I haven't looked at each bed's soil yet. Want a full rundown.",
+          "Those peppers beans herbs and a compost heap layer on top.", "I haven't looked at each bed's. Soil yet."]
 
 
 def test_words_drop_punctuation_and_keep_contractions():
-    assert words("I couldn't check — each. One!") == ["i", "couldn't", "check", "each", "one"]
+    assert words("I haven't looked — each. Bed!") == ["i", "haven't", "looked", "each", "bed"]
     assert words("~/.pi/agent") == ["pi", "agent"]
     assert words("") == [] and words(None) == []
 
 
 def test_align_finds_the_stretch_despite_recogniser_slips():
-    m, b, e, _, _ = align(words("want a full breakdown"), words(REPLY))
-    assert m == 3 and words(REPLY)[b:e][-3:] == ["the", "full", "breakdown"]
+    m, b, e, _, _ = align(words("want a full rundown"), words(REPLY))
+    assert m == 3 and words(REPLY)[b:e][-3:] == ["the", "full", "rundown"]
 
 
 def test_every_echo_of_the_reply_is_echo():
@@ -42,7 +42,7 @@ def test_every_echo_of_the_reply_is_echo():
 def test_the_persons_own_turns_are_not_echo():
     own = ["Okay, so how about you uh walk me through the plan? For the weekend.",
            "What time does the bakery open?", "Yeah.", "What's three plus three?",
-           "Yes, go ahead and add it.", "And let me know when you're done."]
+           "Yes, go ahead and add it.", "Then tell me once it's saved."]
     for heard in own:
         m = best_match(heard, [(REPLY, 0.0)])
         assert m is not None and not m.is_echo(), (heard, m)

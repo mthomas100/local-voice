@@ -202,7 +202,7 @@ def load_config(path: str | Path | None = None, overrides: dict | None = None) -
         if need not in exts:
             raise ConfigError(f"pi.extensions.{need} is required (SPACES.md: the explicit -e list)")
     if any("film-rig" in str(p) for p in exts.values()):
-        raise ConfigError("pi.extensions must never include film-rig.ts (a video rig's Pi extension: it hangs voice turns during a render, 05c)")
+        raise ConfigError("pi.extensions must never include film-rig.ts (a video rig's Pi extension: it hangs voice turns during a render)")
 
     return Config(
         raw=raw, path=path,

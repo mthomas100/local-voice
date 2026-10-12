@@ -1,7 +1,7 @@
 """One JSON line per turn: end of speech to first audio, and where the time went.
 
 The total is Pipecat's UserBotLatencyObserver: from the user's real stop (VAD stop minus stop_secs) to the output
-transport starting to send the reply's audio (note 04c §4); for a WebSocket client add its playout buffer, which the
+transport starting to send the reply's audio; for a WebSocket client add its playout buffer, which the
 e2e client measures on its side. Beside it: the observer's own breakdown (VAD wait, turn analyzer, transcription,
 LLM TTFB, aggregation, TTS), this project's per-stage timings (STT call, prompt to first token, TTS to first audible
 chunk), Smart Turn's verdict, the 1-minute load average and the hold gate's phase. Lines go to <state_dir>/latency/<date>.jsonl, and the last turn to /v1/status.

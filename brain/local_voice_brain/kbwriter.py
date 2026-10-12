@@ -1,8 +1,9 @@
-"""Technical facts into the kb, through kb verbs only (kb AGENTS.md: every bookkeeping step is a `kb` verb).
+"""Technical facts into the knowledge base, through `kb` verbs only (the knowledge base's rule: every bookkeeping step
+is a `kb` verb).
 
 Where they go, and why: the kb's operational lane, as `kb session note` lines on the digest of the technical pass's
-own Pi session (kb.ts registered and closed that session during the run). Not wiki pages: kb AGENTS.md's two-lane
-rule says session material is operational memory and becomes knowledge only when the human promotes a distilled
+own Pi session (kb.ts registered and closed that session during the run). Not wiki pages: the knowledge base's two-lane
+rule says session material is operational memory and becomes knowledge only when a person promotes a distilled
 note into raw/notes/, and "do not let raw transcripts become topic evidence". A note line carries the fact, its kind
 and the voice turns it came from, so promoting one is a copy.
 """

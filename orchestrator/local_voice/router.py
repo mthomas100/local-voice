@@ -36,7 +36,7 @@ _VERB = (r"(?:go(?:\s+back)?\s+(?:to|into)|go\s+back|go|switch(?:\s+(?:back|over
          r"take\s+me(?:\s+back)?(?:\s+(?:to|into))?|bring\s+me(?:\s+back)?\s+(?:to|into)|back\s+to|over\s+to|"
          r"open(?:\s+up)?|bring\s+up|pull\s+up|enter)")
 # A word that, right after a trigger, makes the trigger part of a longer name: "my atlas folder", "the journal entry",
-# "my notes app", "the kb page" are things in a space (or elsewhere), not the space.
+# "my notes app", "the wiki page" are things in a space (or elsewhere), not the space.
 _NAME_GOES_ON = frozenset("""folder folders file files entry entries page pages app apps application directory dir
 repo repository document documents doc docs item items list template templates tab window link links settings
 club note notes""".split())
@@ -104,9 +104,9 @@ def route(text: str, spaces: Spaces) -> Route:
         return Route("none")            # "open my atlas folder": a thing in or near the space, not the space
     alone = m.group("rest").strip() in _COURTESY
     if not (alone or m.group("verb")):
-        return Route("none")            # "home is where..." or "the kb says..." is a sentence, not a switch
+        return Route("none")            # "home is where..." or "the wiki says..." is a sentence, not a switch
     first = by_trigger[m.group("t")]
-    # "go to my journal or the kb": two spaces named in the phrase itself is a question back
+    # "go to my journal or the wiki": two spaces named in the phrase itself is a question back
     tail = m.group("rest")
     other = re.match(rf"^\s*(?:or|and|,)\s+(?:to\s+)?(?:the\s+|my\s+)?(?P<t>{alts})(?=$|\s)", tail)
     if other and by_trigger[other.group("t")] != first:

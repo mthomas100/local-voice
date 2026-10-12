@@ -31,9 +31,18 @@ def cfg_with(tmp_path: Path, spaces: dict, **kw):
                                             "default_space": next(iter(spaces))}})
 
 
+def repo_spaces(cfg):
+    """The repo's spaces.yaml with every path checked. Its roots and skills are one machine's (edit spaces.yaml for
+    yours), so the tests that need it skip where they are missing."""
+    try:
+        return load_spaces(cfg)
+    except SpacesError as e:
+        pytest.skip(f"spaces.yaml does not match this machine: {e}")
+
+
 def test_the_repo_spaces_file_loads_and_derives_the_home_child():
     cfg = load_config()
-    sp = load_spaces(cfg)
+    sp = repo_spaces(cfg)
     home = sp["home"]
     assert home.tier == "ask" and home.tools == ["read", "grep", "find", "ls", "kb"] and home.root == Path.home()
     sc = pi_space_config(cfg, home, agent_dir=Path("/tmp/agent"), state_dir=Path("/tmp/state"))
@@ -82,7 +91,7 @@ def test_bash_allow_prefixes_become_exact_or_prefix_globs():
 
 def test_derived_agent_dir_reads_the_users_models_and_caps_tokens(tmp_path):
     cfg = load_config()
-    sp = load_spaces(cfg)
+    sp = repo_spaces(cfg)
     d = derive_agent_dir(cfg, sp, tmp_path / "agent", base_url="http://127.0.0.1:1/v1")
     m = json.loads((d / "models.json").read_text())["providers"]["local"]
     assert m["baseUrl"] == "http://127.0.0.1:1/v1"

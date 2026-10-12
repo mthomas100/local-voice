@@ -1,4 +1,4 @@
-"""How often does a barge-in land while the model is still generating its reply? (brief step 4, 2026-10-05)
+"""How often does a barge-in land while the model is still generating its reply? (2026-10-05)
 
 When the Pi run has settled before the person barges in, only the speech is cut and the next request extends ds4's
 state as usual. When it has not, the run is aborted, the next request no longer extends ds4's state, and ds4 replays

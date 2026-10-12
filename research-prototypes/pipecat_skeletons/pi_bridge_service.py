@@ -1,6 +1,6 @@
 """A Pipecat "LLM" service that fronts an external agent (Pi over RPC) which keeps its own conversation.
 
-Construct-only skeleton for the orchestrator (research note 04c). The backend is anything with the
+Construct-only skeleton for the orchestrator. The backend is anything with the
 AgentBackend shape below; research-prototypes/pi_rpc_bridge/pi_rpc_bridge.py's PiChild has it (turn(),
 interrupt(), busy, drain(); events TextDelta, ToolCallStarted, ToolStart, ToolUpdate, ToolEnd,
 ConfirmRequest, Settled, Exited). Events are matched by class name so this file does not import the prototype.
@@ -88,7 +88,7 @@ class AgentBackend(Protocol):
 
 
 def interrupted_note(heard: str) -> str:
-    """The prefix that tells the agent where it was cut off (same wording as the 05c prototype)."""
+    """The prefix that tells the agent where it was cut off (same wording as the Pi RPC prototype)."""
     heard = heard.strip()
     if not heard:
         return "(You were interrupted before the user heard any of your last reply.)\n\n"

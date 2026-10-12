@@ -1,7 +1,7 @@
 """A whole orchestrator for the model-free integration tests: real Pipecat pipelines, a real Pi child per space and the
 real protocol v1 server on a scratch port, with fake speech adapters (no MLX), an energy VAD and a timer for the turn
 (no ONNX), the stub LLM instead of the rig, and a fake hold gate. Nothing reaches :8090, ~/.pi/agent (only its
-models.json is read, to derive the throwaway agent dir), ~/kb or Atlas."""
+models.json is read, to derive the throwaway agent dir), a real knowledge base or Atlas."""
 from __future__ import annotations
 
 import asyncio

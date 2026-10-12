@@ -1,6 +1,6 @@
-"""Shared fixtures. Nothing here touches 127.0.0.1:8090, ~/.pi/agent, ~/kb or a real Atlas: the LLM is a stub on a
+"""Shared fixtures. Nothing here touches 127.0.0.1:8090, ~/.pi/agent, a real knowledge base or a real Atlas: the LLM is a stub on a
 free port, Pi runs with a throwaway PI_CODING_AGENT_DIR pointed at it, and work happens under pytest's tmp_path.
-The Pi fixtures come from the 05c prototype's suite (research-prototypes/pi_rpc_bridge/tests/conftest.py)."""
+The Pi fixtures come from the prototype's suite (research-prototypes/pi_rpc_bridge/tests/conftest.py)."""
 from __future__ import annotations
 
 import json

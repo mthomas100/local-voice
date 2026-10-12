@@ -1,9 +1,9 @@
 # pi_rpc_bridge: the voice layer's handle on Pi
 
-A tested prototype (due diligence 05c, 2026-10-05) of how the voice orchestrator drives Pi: one `pi --mode rpc`
-child per space, prompts in, typed events out, interruption, steering, and spoken confirmation. Everything here
-was exercised against a stub LLM; nothing has met a real model yet. The evidence is research note 05c,
-kept with the design notes in a private wiki.
+A tested prototype (2026-10-05) of how the voice orchestrator drives Pi: one `pi --mode rpc` child per space,
+prompts in, typed events out, interruption, steering, and spoken confirmation. The bridge and its tests run against a
+stub LLM; `qwen38_voice_tooluse_test.py` then ran it on real local models ([voice-brain-test.md](voice-brain-test.md)).
+The production version lives in `orchestrator/local_voice/pi_rpc.py`.
 
 | File | What it is |
 |---|---|
@@ -12,8 +12,8 @@ kept with the design notes in a private wiki.
 | `extensions/voice_gate.ts` | the risk gate from SPACES.md: tiers, a bash allowlist that cannot be stretched, `ctx.ui.confirm` with a timeout |
 | `extensions/voice_mode.ts` | `/voice-mode act` and `/voice-mode conversation`: switch the active tool set |
 | `tests/` | 42 pytest tests against the stub (about 33 s); `run_tests.sh` runs them |
-| `qwen38_voice_tooluse_test.py` | 13 voice requests on the real rig per configuration; waits for the GPU. Run 2026-10-05: `results/` |
-| `results/05d-qwen-voice-tooluse-results.md` | what that run found: qwen38 as the live brain, persona via `--system-prompt`, qwen27 needs the chat-template compat, Atlas capture in the orchestrator |
+| `qwen38_voice_tooluse_test.py` | 13 voice requests on the real rig per configuration; waits for the GPU. Writes to `results/` (gitignored) |
+| `voice-brain-test.md` | what the 2026-10-05 run found: qwen38 as the live brain, persona via `--system-prompt`, qwen27 needs the chat-template compat, Atlas capture in the orchestrator |
 
 ## Run the tests
 
@@ -24,7 +24,7 @@ ATLAS_REPO=/path/to/a/journal/repo ./run_tests.sh   # an Atlas-style journal rep
 
 The hold-gate test starts the real `hold` binary (`~/repos/local-rig/hold/hold`, from the companion `local-rig` repo) as a test gate on a free port
 with `--no-implicit` and a temporary `--state`; it skips if the binary or `hold.ts` is missing. No test reaches
-127.0.0.1:8090, `~/.pi/agent`, the real knowledge base or a real journal repo.
+127.0.0.1:8090, `~/.pi/agent`, a real knowledge base or a real journal repo.
 
 ## Using the bridge
 
@@ -46,7 +46,7 @@ child.request_interrupt(heard=words_actually_played)             # returns at on
 # elsewhere: await child.interrupt(heard=...) returns once the aborted run has settled and its leftovers are drained
 ```
 
-Barge-in hygiene (05c E10): every event carries the turn it was read in. `turn()` first waits for a pending
+Barge-in hygiene: every event carries the turn it was read in. `turn()` first waits for a pending
 interrupt and for the aborted run's `agent_settled`, drains what that run left behind into `child.stray`, and
 then yields only its own events, so a stale `agent_settled` can never end a later turn. If a run will not
 settle within `settle_timeout` (10 s), `turn()` raises `PiBusyError` instead of prompting into it. A consumer that
@@ -57,7 +57,7 @@ stops reading a turn before `agent_settled` (cancellation, `break`, `aclose`) tr
 and `PI_OFFLINE=1`, `PI_SKIP_VERSION_CHECK=1` in the child's environment, which also drops `KB_SESSION`,
 `KB_ACTOR`, `CLAUDE_ENV_FILE` and herdr's variables inherited from the parent.
 
-## What the bridge relies on (measured in 05c)
+## What the bridge relies on (measured against the stub and Pi 0.99.1)
 
 - A turn ends at `agent_settled`, not `agent_end`: retries (`agent_end` with `willRetry: true`) and queued
   follow-ups run inside the same settle. An extension's `agent_end` handler delays it (`kb.ts`: about 170 ms).
@@ -85,17 +85,16 @@ Env, set per child: `VOICE_TIER` (`readonly`, `ask`, `trusted`), `VOICE_CONFIRM_
 shell control characters; the one multi-line form allowed is a quoted heredoc whose marker line appears once, at
 the end, which is exactly what `atlas_capture_command()` builds. One leading `cd` into the space root is stripped first
 (a plain, quoted or escaped path inside the root, or the literal no-ops `"$(pwd)"`, `$PWD`, `${PWD}`, `.`): qwen38
-wraps every Atlas capture in one (05d). Chained commands, other `$(...)`, unquoted heredocs, smuggled markers and a
+wraps every Atlas capture in one ([voice-brain-test.md](voice-brain-test.md)). Chained commands, other `$(...)`, unquoted heredocs, smuggled markers and a
 `cd` that leaves the root fall through to asking.
 
 ## The GPU test
 
 `qwen38_voice_tooluse_test.py` waits for its turn: it exits 75 and does nothing unless
-`measure/bench/gpu_clear.sh` exits 0, and stops if a render or a hold starts between requests. Options added for the
-2026-10-05 run: `--legs model:append|replace[:compat]`, `--compat-on-leak`, `--repeat N`, `--spaces home|atlas`,
+`measure/bench/gpu_clear.sh` exits 0, and stops if a render or a hold starts between requests. Options: `--legs model:append|replace[:compat]`, `--compat-on-leak`, `--repeat N`, `--spaces home|atlas`,
 `--orchestrator-capture` (RPC `bash` capture, byte check, then the reply turn), `--leak-abort-chars`.
 By default it runs the 13 requests on `local/qwen38`, then `local/qwen27-262k`,
 then one request on `local/qwen38` so the rig is left on its default, and writes `results/voice-tooluse-<time>.json`
-and `.md`. `--dry-run` prints the plan; `--stub` runs the whole harness against the stub (a self-test; it passed on
+and `.md` (gitignored). `--dry-run` prints the plan; `--stub` runs the whole harness against the stub (a self-test; it passed on
 2026-10-05); `--qwen27-compat qwen-chat-template` and `--prompt-mode replace` are the two follow-ups the results
 may call for. Its header explains the model switches and the isolation.

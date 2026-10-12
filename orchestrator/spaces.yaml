@@ -4,7 +4,7 @@
 # skill dirs) or a list of names (spawned with --no-skills and one --skill <dir> each).
 version: 1
 defaults:
-  model: local/qwen38            # fast MoE: the live conversation (05d: the live brain)
+  model: local/qwen38            # fast MoE: the live conversation (the voice brain test's pick)
   deep_model: local/qwen27-262k  # slow dense model: long do-it-for-me tasks and reflection (needs the qwen chat-template compat)
   thinking: off                  # reasoning off on the live path (it eats the reply budget; ds4 thinks HIGH without it)
   mode: conversation             # conversation | act
@@ -20,8 +20,8 @@ spaces:
     act_tools: [bash, write, edit]
     tier: ask
   atlas:
-    root: ~/atlas                # an Atlas-style markdown journal repo with an atlas.py CLI; point it at your own
-    description: "your atlas journal"
+    root: ~/journal              # an Atlas-style markdown journal repo with an atlas.py CLI; point it at your own
+    description: "your journal"
     triggers: ["atlas", "journal", "my journal", "life wiki", "my notes"]
     skills: auto                 # the repo's own .agents/skills: atlas-journal, atlas-process, atlas-ask, atlas-review, atlas-file
     tools: [read, grep, find, ls, bash]        # bash in conversation mode too: capture runs through atlas.py
@@ -43,9 +43,9 @@ spaces:
       - "When the person muses or says note this, save their exact words first with python3 atlas.py capture --via voice, then reply. When a message says their words are already saved, do not save them again."
       - "Never edit, tidy or rewrite their words. Your own pages go to inbox/; wiki/ only when they say file that."
   kb:
-    root: ~/kb
+    root: ~/wiki                 # an optional knowledge base: a `kb` CLI over a markdown wiki
     description: "the knowledge base"
-    triggers: ["knowledge base", "the kb", "the wiki"]
+    triggers: ["knowledge base", "the wiki"]
     skills: [wiki-query]
     tools: [read, grep, find, ls, kb]
     tier: readonly

@@ -1,29 +1,27 @@
-# 09b — voice components measured on this Mac, phase 2 (final)
+# Voice components on Apple silicon, phase 2 (2026-10-04/05)
 
-**Status: complete for the agreed plan, except VoiceChat 11B 8-bit.** That checkpoint is not downloaded, and the
-instruction was not to download its 13.9 GB now. Phase-2 numbers come from two windows, both with nothing else
-resident on the GPU:
+Phase 2 covers every component planned except VoiceChat 11B 8-bit, whose 13.9 GB checkpoint was not downloaded. The
+numbers come from two windows, both with nothing else resident on the GPU:
 
-- **2026-10-04, 22:01–22:05:** Kokoro, Qwen3-TTS 0.6B and 1.7B, Pocket TTS cold, Parakeet. Per-run detail is in
-  the `raw/clean_*.jsonl` files.
-- **2026-10-05, 08:45:36–08:48:14,** inside one exclusive hold taken by `bench/run_remaining.sh`: Pocket TTS warm,
-  VibeVoice-Realtime, Marvis, Silero VAD, Smart Turn v3, Nemotron streaming ASR, the two co-residency pairs, and
+- **2026-10-04:** Kokoro, Qwen3-TTS 0.6B and 1.7B, Pocket TTS cold, Parakeet. Per-run detail is in the
+  `raw/clean_*.jsonl` files.
+- **2026-10-05,** inside one exclusive GPU hold taken by `bench/run_remaining.sh` (about three minutes): Pocket TTS
+  warm, VibeVoice-Realtime, Marvis, Silero VAD, Smart Turn v3, Nemotron streaming ASR, the two co-residency pairs, and
   VoiceChat 11B 4-bit.
 
 - **Machine:** Apple M5 Max, 128 GB (112 GiB Metal working set), macOS 27.
-- **Runtimes:** the mlx-audio clone at `~/repos/mlx-audio` (0.5.3 plus 21 commits, `ee0c65d`) with MLX 0.31.2, for
-  everything except VoiceChat. VoiceChat ran on mlx-vlm 0.7.4 with MLX 0.32.3 and mlx-audio 0.5.7 (`bench/.venv-vlm`),
-  the only runtime that loads its checkpoint (report 09c, section 8).
-- **What was resident on 2026-10-05:** nothing. The pre-flight gate at 08:44:30 saw the hold gate open, no GPU job,
-  and qwen38 loaded but idle since 01:09:29. The hold (`hd5dae0`, kind `bench`) unloaded qwen38 in 7.7 s and was
-  granted at 08:45:36. All 11 per-phase gate checks under it said GO. llama-swap received no POST from 08:45:28 on.
-  The hold was released at 08:48:16, when the runner exited; qwen38 stays unloaded until its next request.
-- **Evidence:** JSON in `raw/phase2-20261005-084528/`. The full command log (setup output, every gate block) was kept
-  locally and is not published. Full outputs and WAVs are written to `bench/results/<run>/`, which is gitignored.
+- **Runtimes:** an mlx-audio clone (0.5.3 plus 21 commits, `ee0c65d`) with MLX 0.31.2, for everything except
+  VoiceChat. VoiceChat ran on mlx-vlm 0.7.4 with MLX 0.32.3 and mlx-audio 0.5.7 (`bench/.venv-vlm`), the only runtime
+  that loads its checkpoint ([mlx-audio-api.md](mlx-audio-api.md), section 8).
+- **What was resident on 2026-10-05:** nothing. The pre-flight gate saw the hold gate open and no GPU job; the hold
+  unloaded the idle LLM before it was granted, every per-phase gate check under it said GO, and llama-swap received no
+  request during the run.
+- **Evidence:** JSON in `raw/phase2-20261005-084528/`. Full outputs and WAVs are written to `bench/results/<run>/`,
+  which is gitignored.
 - **Protocol:** unchanged from phase 1. One model per process, warm-up first, three runs per text and mode, medians
   with all runs, `mx.reset_peak_memory()` before each run, and `/usr/bin/time -l` for the process. TTFA is the time
   from calling `generate()` to the first chunk materialised as NumPy. Every download (the models, plus the auxiliary
-  files setup.sh fetched at 08:45) finished before the hold, and the run had `HF_HUB_OFFLINE=1`, so no load included
+  files setup.sh fetched) finished before the hold, and the run had `HF_HUB_OFFLINE=1`, so no load included
   a download.
 - **Texts:** short, 11 words, "The kettle is on, and the rain has finally stopped outside." Long, 46 words, "Before
   we start the meeting, let me summarize where things stand. The new build passed every test last night, the design
@@ -40,11 +38,11 @@ resident on the GPU:
 |---|---|---|---|---|
 | Pocket TTS (warm) | **18 ms** first chunk (interval 0.32) | RTF 0.04 | 0.22 GiB weights, 0.89 GiB peak | leading silence 0.04–0.26 s |
 | VibeVoice-Realtime 0.5B 8-bit | **31–35 ms** first chunk (0.32) | RTF 0.12–0.15 | 1.05 GiB active, 1.36–1.42 GiB peak streaming | leading silence 0.16–0.86 s |
-| Kokoro-82M (22:01) | 74–79 ms for a whole sentence (no streaming) | RTF 0.02 | 0.30 GiB, 1.39–2.45 GiB peak | leading silence 0.29 s (phase 1) |
-| Qwen3-TTS 0.6B CustomVoice (22:01) | **78 ms** first chunk (0.32) | RTF 0.20–0.22 | 2.39 GiB, 2.87 GiB peak streaming | leading silence 0.42 s (phase 1) |
-| Qwen3-TTS 1.7B CustomVoice (22:01) | 103 ms first chunk (0.32) | RTF 0.26–0.28 | 4.27 GiB, 4.75 GiB peak streaming | leading silence 0.08 s (phase 1) |
+| Kokoro-82M (10-04) | 74–79 ms for a whole sentence (no streaming) | RTF 0.02 | 0.30 GiB, 1.39–2.45 GiB peak | leading silence 0.29 s (phase 1) |
+| Qwen3-TTS 0.6B CustomVoice (10-04) | **78 ms** first chunk (0.32) | RTF 0.20–0.22 | 2.39 GiB, 2.87 GiB peak streaming | leading silence 0.42 s (phase 1) |
+| Qwen3-TTS 1.7B CustomVoice (10-04) | 103 ms first chunk (0.32) | RTF 0.26–0.28 | 4.27 GiB, 4.75 GiB peak streaming | leading silence 0.08 s (phase 1) |
 | Marvis TTS 250M v0.2 8-bit | 117 ms first chunk (0.32) | RTF 0.25 | 1.05 GiB, 2.35 GiB peak | **no leading silence** in any first-run WAV |
-| Parakeet TDT 0.6B v3 (22:03) | 23 ms for the whole 2.48 s clip | about 100× real time | 2.38 GiB, 2.44 GiB peak | batch only, no live session |
+| Parakeet TDT 0.6B v3 (10-04) | 23 ms for the whole 2.48 s clip | about 100× real time | 2.38 GiB, 2.44 GiB peak | batch only, no live session |
 | Nemotron 3.5 ASR streaming 0.6B 8-bit | final transcript **53–54 ms** after the audio ends; partials every 0.96–1.28 s of audio | 45× real time unpaced | 0.74 GiB, 0.93 GiB peak | 1.12 s native chunk |
 | Silero VAD | 0.4 ms per 32 ms chunk (p50; p95 0.7–0.9 ms) | | 3 MB | |
 | Smart Turn v3 | 1.3–1.7 ms per call (p50; p95 1.4–4.7 ms) | | 0.03 GiB, 0.09 GiB peak | judged the 9.3 s question incomplete (0.22) |
@@ -116,7 +114,7 @@ run of each text and mode only, because only those WAVs are saved:
 | Qwen3-TTS 0.6B (phase 1) | 0.42 s | 0.078 s | 0.50 s |
 | VibeVoice | 0.16 / 0.86 (non-stream), 0.52 / 0.74 (stream 0.32), 0.52 / 0.52 (stream 0.5) | 0.031–0.035 s | 0.55–0.78 s |
 
-Pairs are short / long text. For Qwen3-TTS, report 09c section 3 explains where the silence comes from: the talker
+Pairs are short / long text. For Qwen3-TTS, [mlx-audio-api.md](mlx-audio-api.md) section 3 explains where the silence comes from: the talker
 generates it, and no API knob controls it. Energy-gating the first chunks removes it on any of these models.
 
 ### 2c. Notes
@@ -129,7 +127,7 @@ generates it, and no API knob controls it. Energy-gating the first chunks remove
 
 ## 3. STT
 
-**Parakeet TDT 0.6B v3** (2026-10-04 22:03, `raw/clean_stt_parakeet.jsonl`): 0.023 s on the 2.48 s clip from a
+**Parakeet TDT 0.6B v3** (2026-10-04, `raw/clean_stt_parakeet.jsonl`): 0.023 s on the 2.48 s clip from a
 path (0.023, 0.023, 0.024) and 0.025 s from a pre-loaded array (0.024, 0.026, 0.025). Transcript exact. Load 1.07 s,
 MLX peak 2.44 GiB, max RSS 2.64 GB. In the co-residency rerun below it took 0.022–0.028 s warm.
 
@@ -151,7 +149,7 @@ Partials arrive in bursts each time a 1.12 s encoder chunk completes. With 320 m
 1.28 s of audio, and on clip8 each burst lands 28–46 ms after the chunk that completed it. A word therefore appears roughly
 0.3–1.3 s after it is spoken, depending on where it falls in the chunk. The final transcript needs only the last
 partial chunk, about 53 ms after the audio ends. The deltas are subword pieces such as "we", "a", "ther"; the
-session's output shape is described in 09c section 5.
+session's output shape is described in [mlx-audio-api.md](mlx-audio-api.md) section 5.
 
 ## 4. VAD and turn detection
 
@@ -170,13 +168,13 @@ and 33 MB with Smart Turn added; peak 0.09 GiB.
 
 Smart Turn got three of four right. It scored the full 9.27 s clip as incomplete (0.215), although it ends on a
 finished question ("…or would Friday morning be better?") with 0.12 s of audio after the speech. The short question
-scored 0.989. Smart Turn sees only the last 8 s of a call (09c section 7). At the default threshold of 0.5, a turn
+scored 0.989. Smart Turn sees only the last 8 s of a call (mlx-audio-api.md section 7). At the default threshold of 0.5, a turn
 like clip8 would have to end by the VAD's silence timeout instead. Four judgments are too few for an error rate; this
 is one observed miss.
 
 ## 5. Co-residency: Parakeet and a TTS model in one process
 
-Run at 08:47 with nothing resident (`coresident_*.jsonl`). Each pair transcribes clip3 and then speaks a 10-word reply
+Run on 2026-10-05 with nothing resident (`coresident_*.jsonl`). Each pair transcribes clip3 and then speaks a 10-word reply
 ("Sure, I can check the weather for tomorrow afternoon."), twice.
 
 | pair | STT load s | TTS load s | MLX active after both | MLX peak | max RSS / footprint | round 1 (cold): STT s / TTS TTFA s / TTS total s | round 2 (warm) |
@@ -215,7 +213,7 @@ per-frame time is pure compute.
 | later replies | each final reply's text began 0.06–0.11 s before its clip ended: 15.68 vs 15.75, 24.16 vs 24.24, 38.40 vs 38.51, 47.92 vs 47.99, 61.20 vs 61.26 s. Each clip ends with 0.12–0.15 s of silence, so the text started about as the speech ended |
 | speaking into pauses | during each 9.27 s utterance, which pauses after "afternoon," and "Wednesday.", it emitted 2–3 short text fragments before the final reply |
 | function channel | **1 event in 67 s**: frame 733 (58.6 s), token 2168, text " would". No tools were declared in the prompt; no tool-call structure appeared |
-| VoiceChat 8-bit | **not measured**: not downloaded (`~/.cache/huggingface/hub` has only the 4-bit) |
+| VoiceChat 8-bit | **not measured**: not downloaded (only the 4-bit is cached) |
 
 Assistant text channel, verbatim:
 
@@ -262,7 +260,7 @@ though this run did not test it directly.
   silence is gated) or 0.55–0.78 s (VibeVoice). On an idle GPU the speech components add about 0.15–0.35 s plus the
   LLM with Marvis, Pocket or Qwen3-TTS 1.7B, and up to about 0.85 s with VibeVoice.
 - **Memory.** The full speech side, Parakeet with Qwen3-TTS 0.6B plus Silero and Smart Turn, peaks at about
-  5.5 GiB. Nemotron instead of Parakeet is 0.9 GiB. Beside qwen38's about 80 GiB that leaves over 25 GiB of the
+  5.5 GiB. Nemotron instead of Parakeet is 0.9 GiB. Beside the resident LLM's about 80 GiB (qwen38 with a 262K context) that leaves over 25 GiB of the
   112 GiB working set.
 - **Full duplex.** VoiceChat 11B 4-bit keeps up with real time on this Mac when nothing else uses the GPU: about
   60 ms of compute per 80 ms frame, 25% headroom, 10.3 GiB peak. It begins replies within 0.1 s of the end of the
@@ -273,7 +271,7 @@ though this run did not test it directly.
 
 ## 8. Not measured, and caveats
 
-- **VoiceChat 11B 8-bit:** not downloaded (13.9 GB); left for a later window, as instructed.
+- **VoiceChat 11B 8-bit:** not downloaded (13.9 GB).
 - **No contention:** every 2026-10-05 number has nothing else on the GPU. TTS and VoiceChat beside a decoding LLM are
   still unmeasured.
 - **VoiceChat was fed faster than real time.** A live session paces frames at 80 ms. Per-frame compute is what decides
@@ -285,21 +283,5 @@ though this run did not test it directly.
   measured.
 - **Leading silence** comes from one run per mode; durations vary run to run (Qwen3-TTS especially).
 - **Smart Turn's** sample is four judgments.
-- **A stray run, not used:** at 00:47:58–00:48:17 on 2026-10-05 a leftover background watcher ran an old runner
-  without a hold, between stages of another GPU job. It ran VAD (crashed on the bug fixed since), the two co-residency
-  pairs and the Pocket rerun, and stopped when the other job took the hold at 00:48. Its numbers are not used. No
-  watcher process remains.
 - **Footprints:** the `/usr/bin/time -l` "peak memory footprint" (VibeVoice 23 GB, VoiceChat 15 GB) counts transient
   Metal allocations. MLX peak and max RSS are the resident figures.
-
-## 9. Timeline of the 2026-10-05 run
-
-| time | event |
-|---|---|
-| 08:41 | `gpu_clear.sh` CLEAR: hold gate open, no GPU job, qwen38 idle since 01:09:29 |
-| 08:43–08:44 | `gate.sh` own-hold logic dry-checked on canned hold states |
-| 08:44:30 | pre-flight gate GO |
-| 08:44:30–08:45:28 | `setup.sh`: built `.venv-kokoro` and `.venv-vlm`; fetched the Mimi codec (0.385 GB, 43.5 s), the Marvis tokenizer and voice prompt, and the Qwen2.5 tokenizer; every phase READY in an offline check |
-| 08:45:28 | hold `hd5dae0` requested; qwen38 unloaded in 7.7 s |
-| 08:45:36 | hold granted; the phases ran in order, each behind a GO gate |
-| 08:48:14 | runner done, all seven phases OK; hold released 08:48:16 |

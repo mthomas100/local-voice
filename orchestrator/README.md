@@ -45,7 +45,7 @@ Everything is in `config.yaml`; local overrides go in `config.local.yaml` beside
 | `local_voice/pipeline.py` | one Pipecat pipeline per connection: STT, user aggregator (VAD, Smart Turn), agent, TTS, notices |
 | `local_voice/bargein.py` | barge-in: the reply's audio stops at the first speech frame, `interrupt` follows when the VAD confirms, an unconfirmed pause carries on (protocol v1 output) |
 | `local_voice/agent.py` | `AgentHub` (one Pi child per space, process-wide) and `PiAgentService` (Pi as Pipecat's "LLM") |
-| `local_voice/pi_rpc.py` | the Pi RPC bridge, carried over from the tested 05c prototype |
+| `local_voice/pi_rpc.py` | the Pi RPC bridge, carried over from the tested prototype |
 | `local_voice/services/` | the STT services (live and per utterance) and the TTS service over the MLX adapters |
 | `local_voice/engines/` | the model adapters (Nemotron, Parakeet, Qwen3-TTS, Kokoro, any streaming mlx-audio TTS) and fakes |
 | `local_voice/mlx_worker.py` | the single MLX thread, with the hold gate's refusal enforced at its door |

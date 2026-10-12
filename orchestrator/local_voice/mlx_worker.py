@@ -1,6 +1,6 @@
 """One thread, with its own MLX stream, for every MLX call in the process; and the GPU rule enforced at its door.
 
-Why one thread (09c §9, 04c §6): MLX streams belong to the thread that made them. An array created on one thread
+Why one thread (measure/mlx-audio-api.md §9): MLX streams belong to the thread that made them. An array created on one thread
 and evaluated on another fails ("There is no Stream(gpu, 0) in current thread"), and `asyncio.to_thread` hops
 between pool threads. mlx-audio's own MLXWorkScheduler is the pattern copied here: a one-worker executor that
 creates a GPU stream on first use and runs every call inside `with mx.stream(...)`. Model loads, warm-ups, STT

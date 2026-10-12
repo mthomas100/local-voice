@@ -3,7 +3,7 @@ browser entry on 127.0.0.1.
 
 Access (PROTOCOL.md): a non-loopback peer is accepted only if `tailscale whois` names one of
 allowed_logins; the socket is accepted and then closed with 4403, because a close before accept reaches the client as
-a bare HTTP 403 (uvicorn, note 04c §2). Loopback is allowed explicitly (`whois` fails for 127.0.0.1). The listening
+a bare HTTP 403 (uvicorn). Loopback is allowed explicitly (`whois` fails for 127.0.0.1). The listening
 sockets are bound to exactly 127.0.0.1 and this Mac's tailnet IPv4, never 0.0.0.0, never `tailscale funnel`.
 
 Start: `python -m local_voice.server` (run.sh does it with the right environment). It refuses while the hold gate is
@@ -98,8 +98,8 @@ def new_session_id() -> str:
 
 def warm_turn_models(cfg: Config) -> dict[str, float]:
     """Load Silero and Smart Turn v3.2 once at startup and run each on silence, so a broken model fails here rather
-    than on the first connection, and their files are in the page cache. Both are CPU ONNX bundled with Pipecat
-    (note 04c §7); every pipeline still builds its own pair, because their state is per audio stream."""
+    than on the first connection, and their files are in the page cache. Both are CPU ONNX bundled with Pipecat;
+    every pipeline still builds its own pair, because their state is per audio stream."""
     import numpy as np
 
     from .pipeline import turn_setup

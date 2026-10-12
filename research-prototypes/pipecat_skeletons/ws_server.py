@@ -1,6 +1,6 @@
 """Protocol v1 server: FastAPI + FastAPIWebsocketTransport on :8770, loopback and tailnet address only.
 
-Construct-only skeleton (research note 04c); create_app() builds the app, serve() is never called by the
+Construct-only skeleton; create_app() builds the app, serve() is never called by the
 checks.
 
 Why FastAPIWebsocketTransport and not WebsocketServerTransport (pipecat-ai 1.12.0):
@@ -23,7 +23,7 @@ Why FastAPIWebsocketTransport and not WebsocketServerTransport (pipecat-ai 1.12.
   runner's bot() pattern.
 
 `tailscale whois --json <ip:port>` returns {"UserProfile": {"LoginName": ...}, "Node": {...}} and takes about
-30 ms here; for 127.0.0.1 it exits 1 with "peer not found" (raw/04c-tailscale-cli-facts.md), so loopback is
+30 ms here; for 127.0.0.1 it exits 1 with "peer not found", so loopback is
 allowed explicitly.
 """
 

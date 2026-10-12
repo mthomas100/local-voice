@@ -2,9 +2,9 @@
 
 "derived" (the default) writes one under the state dir at every start, from your Pi models.json (read only):
 the `local` provider with just the models spaces.yaml names, each capped at pi.max_tokens per call (a voice-only
-bound on runaway replies, 05d), packages off, and `skills` pointing at your global Pi skills so `skills: auto`
+bound on runaway replies), packages off, and `skills` pointing at your global Pi skills so `skills: auto`
 spaces discover what an interactive pi would. Nothing is written under ~/.pi/agent; Pi's sessions go to the state
-dir through --session-dir anyway. The 05d brain test ran the real rig through exactly this kind of throwaway dir.
+dir through --session-dir anyway. The voice brain test (research-prototypes/pi_rpc_bridge/voice-brain-test.md) ran the real rig through exactly this kind of throwaway dir.
 """
 from __future__ import annotations
 

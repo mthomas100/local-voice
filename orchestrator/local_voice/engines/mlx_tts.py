@@ -1,6 +1,6 @@
 """Any other mlx-audio TTS model that streams with `stream=True, streaming_interval=...` (Pocket TTS, Marvis).
 
-Measured here (09b §2) at interval 0.32: Pocket TTS 18 ms to the first chunk (leading silence 0.04-0.26 s), Marvis
+Measured here (measure/phase2.md §2) at interval 0.32: Pocket TTS 18 ms to the first chunk (leading silence 0.04-0.26 s), Marvis
 117 ms (no leading silence). Settings: model, voice (null = the model's default), streaming_interval, and a
 `generate` table of extra keyword arguments; arguments a model's generate() does not take are dropped.
 """

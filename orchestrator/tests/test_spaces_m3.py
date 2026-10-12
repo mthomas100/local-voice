@@ -19,7 +19,7 @@ from harness import rig
 from local_voice.client import tone_pcm
 from local_voice.router import musing, route
 
-ATLAS = Path(os.environ.get("ATLAS_REPO", "~/atlas")).expanduser()   # an Atlas-style journal repo, cloned, never written
+ATLAS = Path(os.environ.get("ATLAS_REPO", "~/journal")).expanduser()   # an Atlas-style journal repo, cloned, never written
 DEFAULTS = {"model": "local/qwen38", "thinking": "off", "mode": "conversation", "tier": "ask", "voice": "ryan"}
 
 
@@ -45,13 +45,13 @@ def spaces_file(tmp_path: Path, journal_root: Path | None = None) -> dict:
 def test_the_router_reads_switches_modes_and_notes():
     from local_voice.config import load_config
     from local_voice.spaces import load_spaces
-    sp = load_spaces(load_config())
+    sp = load_spaces(load_config(), check_paths=False)   # routing needs no real space roots
     assert route("Go to my journal.", sp).space == "atlas"
     r = route("Switch to the knowledge base and search for the hold gate.", sp)
     assert (r.kind, r.space, r.rest) == ("switch", "kb", "search for the hold gate.")
     assert route("Back home, please.", sp).space == "home"
     assert route("The kb says what about heat pumps?", sp).kind == "none"      # a sentence, not a switch
-    assert route("Go to my journal or the kb.", sp).candidates == ["atlas", "kb"]
+    assert route("Go to my journal or the wiki.", sp).candidates == ["atlas", "kb"]
     assert route("Act mode.", sp).mode == "act" and route("Just talk.", sp).mode == "conversation"
     assert route("go to sleep", sp).kind == "none"
     assert musing("Note this: the garden was quiet… like $5") == "the garden was quiet… like $5"

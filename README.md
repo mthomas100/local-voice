@@ -188,8 +188,8 @@ Each figure is the median of 3 runs, through mlx-audio, with nothing else on the
 first sound. Several engines generate leading silence: from 0.42 s for Qwen3-TTS 0.6B up to 0.86 s in the worst
 VibeVoice run. Qwen3-TTS 1.7B, the default voice, had 0.08 s of leading silence. Marvis had none. The project uses
 Qwen3-TTS 1.7B CustomVoice for voice quality, and every engine here is an adapter away. The full tables, including
-non-streaming and long-text runs, are in [`measure/09b-phase2-report.md`](measure/09b-phase2-report.md) and
-[`measure/09-phase1-report.md`](measure/09-phase1-report.md). The raw data is in `measure/raw/`.
+non-streaming and long-text runs, are in [`measure/phase2.md`](measure/phase2.md) and
+[`measure/phase1.md`](measure/phase1.md). The raw data is in `measure/raw/`.
 
 ### Speech models next to the LLM
 
@@ -233,8 +233,8 @@ single speech frame (median 72 ms) and interrupts only when Silero confirms. Wit
   `mlx-community/nemotron-3.5-asr-streaming-0.6b-8bit`, `mlx-community/parakeet-tdt-0.6b-v3`,
   `Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice`, and optionally `mlx-community/Kokoro-82M-bf16`; Smart Turn v3 and Silero
   come with Pipecat.
-- **Optional**: an Atlas-style journal repo (`ATLAS_REPO`, default `~/atlas`) and a `kb` knowledge-base CLI
-  (`KB_HOME`, default `~/kb`) for the journal and knowledge-base spaces. Without them, use the `home` space or edit
+- **Optional**: an Atlas-style journal repo (`ATLAS_REPO`, default `~/journal`) and a `kb` knowledge-base CLI
+  (`KB_HOME`, default `~/wiki`) for the journal and knowledge-base spaces. Without them, use the `home` space or edit
   `orchestrator/spaces.yaml`. Tailscale is optional, for the iPhone.
 
 This is a personal rig, not a packaged product. Expect to edit `config.yaml` and `spaces.yaml` for your machine.
@@ -294,9 +294,10 @@ model-free suites.
 - **iPhone**: verified in the simulator against the real server. No real-device install yet, and no locked-phone
   conversation yet.
 - **The brain and tone hints** were tested against stand-ins and synthetic speech only, not real models or real days.
-- **A single-machine project.** Paths, model choices and the GPU lock assume the author's setup. Design notes and the
-  research behind the decisions are kept in a private wiki; the reports in `measure/` and the docs here are the public
-  part.
+- **A single-machine project.** Paths, model choices and the GPU lock assume the author's setup. The measurement
+  reports are in `measure/` (`phase1.md`, `phase2.md`, and `mlx-audio-api.md`, the mlx-audio API facts the adapters
+  rely on), and the local-model brain test is in
+  [`research-prototypes/pi_rpc_bridge/voice-brain-test.md`](research-prototypes/pi_rpc_bridge/voice-brain-test.md).
 
 ## Credits and licences
 

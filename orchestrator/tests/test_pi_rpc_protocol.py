@@ -1,4 +1,4 @@
-"""Pi's RPC protocol through the bridge, against the stub LLM: the behaviour the voice layer relies on (05c)."""
+"""Pi's RPC protocol through the bridge, against the stub LLM: the behaviour the voice layer relies on."""
 import asyncio
 import subprocess
 import time

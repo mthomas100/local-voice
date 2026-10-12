@@ -86,7 +86,7 @@ within 5 s as "no answer" (the M1 server ignores both messages; M3 implements th
 
 ### Approvals (added 2026-10-05, additive)
 
-In early live use the plain v1 question ("May I change your knowledge base? It starts with kb new. Yes or no?") proved
+In early live use the plain v1 question (of the form "May I change your notes? It starts with notes add. Yes or no?") proved
 too vague: an approval should give what coding agents give, exactly what will happen and a choice the person can see
 and pick. So a `confirm_request` also carries:
 

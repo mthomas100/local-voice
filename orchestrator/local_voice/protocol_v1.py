@@ -1,6 +1,6 @@
 """Wire protocol v1 (PROTOCOL.md) on Pipecat 1.12.0: the serializer, and the two processors that speak it.
 
-What reaches a FrameSerializer on FastAPIWebsocketTransport (note 04c §2): audio already resampled to 24 kHz and cut
+What reaches a FrameSerializer on FastAPIWebsocketTransport: audio already resampled to 24 kHz and cut
 into audio_out_10ms_chunks x 10 ms; the InterruptionFrame itself; OutputTransportMessage(Urgent)Frame. Nothing else,
 so state, transcript and reply messages travel as message frames: urgent ones go out at once, plain ones wait behind
 the audio already queued (which keeps audio_start / audio_end / end_of_turn in order with the audio) and are dropped
@@ -82,7 +82,7 @@ WORDS_PER_MS = 2.6 / 1000
 class ReplyTimeline:
     """Where each spoken sentence sits in a reply's audio, so a client's `played_ms` maps to the words it heard.
 
-    Pipecat itself records only sentences whose audio was handed to the transport (note 04c §1); the client's
+    Pipecat itself records only sentences whose audio was handed to the transport; the client's
     playout buffer means less was heard. played_ms counts the reply's audio from its audio_start.
 
     A sentence is recorded when all its audio has been queued (TTSTextFrame comes after it), but its text is announced
@@ -178,7 +178,7 @@ class ProtocolV1Serializer(FrameSerializer):
                 logger.warning(f"{self}: audio message of {len(frame.audio)} bytes exceeds {MAX_BINARY}")
             return frame.audio
         if isinstance(frame, InterruptionFrame):
-            # Every user turn start broadcasts an interruption (note 04c §2); tell the client only while a reply plays,
+            # Every user turn start broadcasts an interruption; tell the client only while a reply plays,
             # and not when the client asked for it itself.
             if self.active_reply is None or self.client_interrupted:
                 self.client_interrupted = False

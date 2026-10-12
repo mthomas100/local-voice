@@ -14,8 +14,8 @@
 #   - before every phase, bench/gate.sh with HOLD_ID: GO only while our hold is the granted one, no other hold is
 #     queued (another job waiting means we yield), no GPU job runs and the LLM stays unloaded. The first refusal
 #     stops the run cleanly; the summary lists the phases not run, which can be re-run by name.
-#   - each step runs in its own process. Filtered output goes to a local log, raw/09-measurements-log.md (bench/log.sh; not published), JSON to
-#     raw/phase2-<stamp>/, and the full output, WAVs and summary.md to bench/results/<stamp>/ (gitignored).
+#   - each step runs in its own process. JSON goes to raw/phase2-<stamp>/; the full output, the filtered output
+#     (runner.log), WAVs and summary.md go to bench/results/<stamp>/ (gitignored).
 here=${0:a:h}
 export SP=${SP:-${here:h}}                        # measure/ (bench/, raw/, audio/)
 HOLD=${HOLD_BIN:-$HOME/.local/bin/hold}
@@ -26,9 +26,8 @@ if [ "$1" != --inside ]; then
   for ph in $phases; do (( ${ALL[(Ie)$ph]} )) || { echo "unknown phase '$ph' (phases: $ALL)"; exit 2; }; done
   # the pre-flight check ignores any hold this shell may have inherited: never start inside another job's hold
   env -u HOLD_ID $here/gate.sh "pre-flight: run_remaining.sh $phases" || { echo "refused: the GPU is not clear (see the gate block above); nothing started"; exit 2; }
-  LOG=$SP/raw/09-measurements-log.md
-  { echo; echo "### $(date +%H:%M:%S) setup.sh (before the hold; network and CPU only)"; echo '```'; } >> $LOG
-  $here/setup.sh 2>&1 | tee -a $LOG; rc=${pipestatus[1]}; echo '```' >> $LOG
+  echo "$(date +%H:%M:%S) setup.sh (before the hold; network and CPU only)"
+  $here/setup.sh; rc=$?
   [ $rc = 0 ] || { echo "setup.sh failed; nothing started (fix it, or run it by hand to see why)"; exit 3; }
   stamp=$(date +%Y%m%d-%H%M%S)
   echo "taking the hold: $HOLD run --kind bench --reason \"voice benchmarks phase 2\" (it waits for calls in flight, then unloads the LLM)"
@@ -46,13 +45,12 @@ mkdir -p $J $R/audio
 F='grep -vE "it/s\]|^\s*$" | grep -E "^\{|maximum resident|real|user|sys|peak memory footprint|Error|Traceback|rror"'
 note() { echo "$(date +%H:%M:%S) $*" | tee -a $R/runner.log; }
 typeset -A res          # per-phase result (not "status": a read-only special parameter in zsh)
-# step <name> <command>: full output to results/<stamp>/<name>.out, filtered output to the measurement log
+# step <name> <command>: full output to results/<stamp>/<name>.out, the command and its filtered output to runner.log
 step() { local name=$1; shift
-  $here/log.sh "$* 2>&1 | tee $R/$name.out | $F" > /dev/null
+  { echo "\$ $*"; eval "$* 2>&1 | tee $R/$name.out | $F"; echo "(exit $?)"; } >> $R/runner.log
   if grep -q '"event": "done"' $R/$name.out; then note "  $name: OK"; else note "  $name: FAILED (see $R/$name.out)"; failed=1; fi; }
 gate() { $here/gate.sh "clean, own hold $HOLD_ID: $1" > /dev/null; }
 
-{ echo; echo "## $(date '+%Y-%m-%d %H:%M') phase-2 run $stamp under hold ${HOLD_ID:-?} (run_remaining.sh): $phases"; } >> $SP/raw/09-measurements-log.md
 note "run $stamp, hold ${HOLD_ID:-?}, phases: $phases; JSON $J; outputs $R"
 [ "${HOLD_ID:-none}" = none ] && note "WARNING: hold run could not reach the hold gate; running without a hold (the gate is down, so nothing can load through :8090)"
 stopped=""
@@ -66,7 +64,7 @@ for ph in $phases; do
     coresident) desc="co-residency Parakeet + Kokoro, Parakeet + Qwen3-TTS 0.6B";;
     voicechat) desc="VoiceChat 11B 4-bit (mlx-vlm), >= 64 s duplex session, per-80 ms-frame timing";;
   esac
-  if ! gate "$desc"; then stopped=$ph; note "STOP before $ph: the gate refused (block in the measurement log)"; break; fi
+  if ! gate "$desc"; then stopped=$ph; note "STOP before $ph: the gate refused (block in the gate log)"; break; fi
   note "phase $ph: $desc"; failed=0
   case $ph in
     pocket) step pocket "/usr/bin/time -l $PY $here/tts_bench.py --model mlx-community/pocket-tts --stream-intervals 0.32,0.5 --runs 3 --out $J/tts_pocket_warm.jsonl --audio-dir $R/audio --tag clean-pocket-warm";;
@@ -92,7 +90,7 @@ done
   echo "| phase | result |"; echo "|---|---|"
   for ph in $phases; do
     if [ -n "${res[$ph]}" ]; then echo "| $ph | ${res[$ph]} |"
-    elif [ "$ph" = "$stopped" ]; then echo "| $ph | not run: the gate refused (see the measurement log) |"
+    elif [ "$ph" = "$stopped" ]; then echo "| $ph | not run: the gate refused (see the gate log) |"
     else echo "| $ph | not run |"; fi
   done
   tts=($J/tts_*.jsonl(N)); (( $#tts )) && { echo; echo '## TTS tables (bench/summarize.py)'; $PY $here/summarize.py $tts 2>&1; }

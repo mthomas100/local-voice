@@ -26,6 +26,8 @@ os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
 import pytest
 import pytest_asyncio
 
+KB_REAL = Path(os.environ.get("KB_HOME", "~/wiki")).expanduser()   # the knowledge base the kb clone comes from
+
 ORCH = Path(__file__).resolve().parents[2]
 REPO = ORCH.parent
 GPU_CLEAR = REPO / "measure/bench/gpu_clear.sh"
@@ -62,9 +64,9 @@ def kb_clone(run_dir) -> Path:
     clone is reused (a second `git clone` into it failed, 2026-10-05 16:53)."""
     dst = run_dir / "kb"
     if not (dst / ".git").exists():
-        subprocess.run(["git", "clone", "--quiet", "--no-hardlinks", str(Path.home() / "kb"), str(dst)], check=True)
+        subprocess.run(["git", "clone", "--quiet", "--no-hardlinks", str(KB_REAL), str(dst)], check=True)
     subprocess.run(["git", "-C", str(dst), "remote", "set-url", "--push", "origin", "DISABLED-voice-e2e-clone"], check=True)
-    assert dst.resolve() != (Path.home() / "kb").resolve()
+    assert dst.resolve() != KB_REAL.resolve()
     return dst
 
 

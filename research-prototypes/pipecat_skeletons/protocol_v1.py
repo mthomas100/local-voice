@@ -1,6 +1,6 @@
 """Wire protocol v1 (PROTOCOL.md) on Pipecat 1.12.0: a FrameSerializer and two small processors.
 
-Construct-only skeleton (research note 04c). What reaches a FrameSerializer on FastAPIWebsocketTransport:
+Construct-only skeleton. What reaches a FrameSerializer on FastAPIWebsocketTransport:
 - serialize(): OutputAudioRawFrame from write_audio_frame (already resampled to audio_out_sample_rate and cut
   to audio_out_10ms_chunks x 10 ms, base_output.py:604-627, websocket/fastapi.py:526-557); the
   InterruptionFrame itself (fastapi.py:499-514); OutputTransportMessageFrame and

@@ -19,6 +19,6 @@ pythonpath = ["."]
 addopts = "-p no:cacheprovider"
 markers = [
     "needs_pi: runs a real `pi --mode json` against the stub LLM",
-    "needs_kb: works on a git clone of ~/kb",
+    "needs_kb: works on a git clone of the knowledge base (KB_HOME)",
     "needs_atlas: works on a git clone of the Atlas repo",
 ]

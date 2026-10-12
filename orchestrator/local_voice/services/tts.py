@@ -1,12 +1,12 @@
 """A Pipecat TTS service over the MLX synthesizers: one chunk per MLX-thread call, leading silence trimmed.
 
-Pipecat 1.12.0 facts used here (note 04c §6, tts_service.py):
+Pipecat 1.12.0 facts used here (tts_service.py):
 - run_tts is iterated inside the service's process task, and `_push_tts_frames` awaits the whole generator before the
   next sentence is taken, so within one pipeline sentence N+1 starts after sentence N's generator ends. Across
-  pipelines (a phone and a browser at once) a lock per engine keeps one stream per model object (09c §2).
+  pipelines (a phone and a browser at once) a lock per engine keeps one stream per model object (measure/mlx-audio-api.md §2).
 - An InterruptionFrame cancels the process task between yields. The cleanup below never awaits: the interruption
   waits for this task to finish cancelling (at most 1 s), so it only submits closing the generator to the MLX thread,
-  where it runs right after the chunk in progress (09c §2: "at most one chunk late").
+  where it runs right after the chunk in progress (measure/mlx-audio-api.md §2: "at most one chunk late").
 - Contexts that produce no audio count toward writing the service off after three in a row; a hold legitimately
   silences contexts, so that check is off here (max_consecutive_zero_audio_contexts=0) and the hold coordinator
   speaks the busy notice instead.

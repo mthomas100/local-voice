@@ -1,8 +1,8 @@
 """One thread for every MLX call in the orchestrator process.
 
-Why (research note 04c, 2026-10-05):
+Why (2026-10-05):
 - MLX keeps a default stream per thread; an array created or realised on one thread and used on another
-  fails ("There is no Stream(gpu, 0) in current thread", Ianodad/voice-stack, note 04b).
+  fails ("There is no Stream(gpu, 0) in current thread", Ianodad/voice-stack).
 - Pipecat 1.12's own local services hop threads: WhisperSTTServiceMLX calls asyncio.to_thread
   (pipecat/services/whisper/stt.py:590-596) and PocketTTSService steps its generator with
   asyncio.to_thread(sync_next, stream) (pipecat/services/pocket_tts/tts.py:196-212). asyncio.to_thread uses

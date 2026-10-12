@@ -9,8 +9,8 @@
 #   2. no GPU job process: renders, image/3D generation, the sibling video and 3D rigs (Claude shell
 #      wrappers excluded, since their command lines quote these patterns);
 #   3. llama-swap /running is empty OR the LLM has had no POST for >= 120 s.
-# Logs the state it saw to the measurement log either way.
-LOG=${SP:-${0:a:h:h}}/raw/09-measurements-log.md
+# Logs the state it saw either way, to GATE_LOG (default bench/results/gate-log.md, gitignored).
+LOG=${GATE_LOG:-${0:a:h}/results/gate-log.md}; mkdir -p ${LOG:h}
 HOLD=${HOLD_BIN:-$HOME/.local/bin/hold}
 own=${HOLD_ID:-}; [ "$own" = none ] && own=""
 r=$(curl -s --max-time 3 127.0.0.1:8090/running)

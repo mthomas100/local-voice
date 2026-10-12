@@ -113,7 +113,7 @@ FILLERS = [
 # One rambling request (synthetic), with a pause at each full stop: one request that
 # a turn detector may log as several turns.
 RAMBLE = ["Could you go to my journal.", "And uh.", "Just put a, um.", "So.", "I think like a short note that just.",
-          "Call the plumber on Monday.", "Something like that.", "And let me know when you're done."]
+          "Call the plumber on Monday.", "Something like that.", "Then tell me once it's saved."]
 RAMBLE_PAUSES_MS = [800, 1500]
 
 

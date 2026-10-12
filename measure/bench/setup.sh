@@ -110,7 +110,7 @@ for phase, items in need.items():
 raise SystemExit(1 if bad else 0)
 PYEOF
 
-# clips (gitignored; synthetic `say` speech, texts as in 09b-phase2-report.md)
+# clips (gitignored; synthetic `say` speech, texts as in measure/phase2.md)
 mkdir -p $SP/audio
 mk() { [ -s $SP/audio/$1_16k.wav ] && return; say -v Samantha -o $SP/audio/$1.aiff "$2" && afconvert -f WAVE -d LEI16@16000 -c 1 $SP/audio/$1.aiff $SP/audio/$1_16k.wav && rm -f $SP/audio/$1.aiff && echo "setup: regenerated audio/$1_16k.wav"; }
 mk clip3 "Could you check the weather for tomorrow afternoon?"

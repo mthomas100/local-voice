@@ -187,7 +187,7 @@ def test_the_hold_words():
         assert holds(t), t
     for t in ("Something like that.", "What is the capital of France?", "Hello World from the voice agent.", "Yes.", ""):
         assert not holds(t), t
-    assert holds("What does a heat pump look like?")                              # the brief's list alone holds it,
+    assert holds("What does a heat pump look like?")                              # the hold-word list alone holds it,
     assert not holds("What does a heat pump look like?", except_questions=True)   # but it is a finished question
     assert holds("Can you make a, like,", except_questions=True) and holds("And um?", except_questions=True)
 

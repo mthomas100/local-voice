@@ -21,7 +21,7 @@ server:
   browser:
     enabled: true
     port: 7860               # SmallWebRTC and the page at /, 127.0.0.1 only (its /start is unauthenticated)
-    working_sound: true      # the "working" loop while a tool runs; browser path only (note 04c §5)
+    working_sound: true      # the "working" loop while a tool runs; browser path only
     # Pipecat's prebuilt client at /client. Off: it fetches Daily's call-machine bundle from c.daily.co when it loads
     # (seen in the headless Chromium test, 2026-10-05); the project's own page at / fetches nothing from outside.
     prebuilt: false
@@ -230,7 +230,7 @@ agent:
   persona_file: persona.md
   default_space: home
   # Spoken by the orchestrator (not the model) when a tool call starts, so it cannot be skipped. Neutral
-  # wording: toolcall_start precedes any permission question (note 05c).
+  # wording: toolcall_start precedes any permission question.
   acks:
     kb: "Let me look that up."
     read: "Let me check."
@@ -248,7 +248,7 @@ agent:
     bash: "running a command"
     write: "writing a file"
     edit: "editing a file"
-  loading_notice: "One moment, the model is waking up."   # llama-swap streams its load banner as reasoning (05d)
+  loading_notice: "One moment, the model is waking up."   # llama-swap streams its load banner as reasoning
   # Looking things up in conversation mode (voice_gate.ts, 2026-10-05): qwen38 once spent over 90 s in kb and grep on
   # "how much does one cost?" with only "Let me look that up." spoken. After this many tool calls or seconds in one
   # run, further calls are refused with an instruction to answer with what it has and offer to look further. Act mode
@@ -317,14 +317,14 @@ pi:
   # with packages off; ~/.pi/agent is only read. A path uses that agent dir as is.
   agent_dir: derived
   models_source: ~/.pi/agent/models.json
-  max_tokens: 4096               # per model call; bounds a runaway spoken reply (05d recommendation)
+  max_tokens: 4096               # per model call; bounds a runaway spoken reply (a voice brain test recommendation)
   skill_dirs: [~/.pi/agent/skills, ~/.agents/skills]   # where a space's named skills are looked up, after its root
   extensions:                    # the explicit -e list (SPACES.md); unrelated extensions are never loaded
     voice_gate: pi/voice_gate.ts
     voice_mode: pi/voice_mode.ts
     hold: ~/repos/local-rig/extensions/hold.ts
     today: ~/repos/local-rig/extensions/today.ts
-    kb: ~/kb/adapters/pi/kb.ts   # only where a space lists the kb tool
+    kb: ~/wiki/adapters/pi/kb.ts # the knowledge base's Pi adapter; only where a space lists the kb tool
   # voice_gate.ts's own dialog timeout, a backstop only: the orchestrator answers every approval itself within
   # agent.approvals' waits, and the gate gets at least the longest wait plus 15 s (spaces.py)
   confirm_timeout_ms: 20000

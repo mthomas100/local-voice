@@ -90,7 +90,7 @@ def tts_engines() -> None:
     save(fig, "chart-tts-engines.png",
          "Data: measure/raw/clean_tts_*.jsonl (2026-10-04 22:01) and measure/raw/phase2-20261005-084528/tts_*.jsonl "
          "(2026-10-05 08:45), mlx-audio on Apple M5 Max, nothing else on the GPU. First chunk is not first sound: "
-         "see leading silence in measure/09b-phase2-report.md.")
+         "see leading silence in measure/phase2.md.")
 
 
 def coresidency() -> None:

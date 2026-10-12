@@ -1,8 +1,8 @@
 """Nemotron 3.5 ASR streaming 0.6B 8-bit through mlx-audio 0.5.7's live session (the default ears).
 
-Measured here (09b §3), feeding 320 ms chunks in real time: partials arrive in bursts each time a 1.12 s encoder
+Measured here (measure/phase2.md §3), feeding 320 ms chunks in real time: partials arrive in bursts each time a 1.12 s encoder
 chunk completes, and the final transcript 53-54 ms after the audio ends; 0.74 GiB of MLX memory. The session's
-`feed`/`close` are thread-safe; `step` and `cancel` must run on one consumer thread, here the MLX worker (09c §5).
+`feed`/`close` are thread-safe; `step` and `cancel` must run on one consumer thread, here the MLX worker (measure/mlx-audio-api.md §5).
 `step` returns bare text deltas with no final marker; completion is `done`.
 """
 from __future__ import annotations

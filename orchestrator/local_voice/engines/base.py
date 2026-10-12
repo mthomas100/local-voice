@@ -41,7 +41,7 @@ class Transcriber(Engine):
 
 
 class StreamSession(Protocol):
-    """A live transcription session (mlx-audio's StreamingSession shape, 09c §5).
+    """A live transcription session (mlx-audio's StreamingSession shape, measure/mlx-audio-api.md §5).
 
     feed() and close() may run on any thread; step() and cancel() only on the MLX thread. step() returns text
     deltas (append-only); `done` turns true once a closed session has decoded everything."""
@@ -70,7 +70,7 @@ class Synthesizer(Engine):
 
     The generator is created and advanced on the MLX thread, one chunk per call. Closing it early (barge-in) must
     leave the model ready for the next utterance: the adapter's own `finally` releases what the model keeps (for
-    Qwen3-TTS: close mlx-audio's generator, reset the decoder's streaming state, clear MLX's cache; 09c §2).
+    Qwen3-TTS: close mlx-audio's generator, reset the decoder's streaming state, clear MLX's cache; measure/mlx-audio-api.md §2).
     One stream per model object at a time: the service holds a lock across a whole utterance."""
 
     sample_rate: int = 24000

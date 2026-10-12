@@ -1,5 +1,5 @@
 """Fixtures: a stub LLM on a free port, a throwaway PI_CODING_AGENT_DIR pointed at it, a scratch working dir, and
-a factory for Pi RPC children that are always closed. Nothing here touches 127.0.0.1:8090, ~/.pi/agent or ~/kb."""
+a factory for Pi RPC children that are always closed. Nothing here touches 127.0.0.1:8090, ~/.pi/agent or a real knowledge base."""
 from __future__ import annotations
 
 import json

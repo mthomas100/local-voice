@@ -70,7 +70,7 @@ async def test_trusted_tier_allowlist_cannot_be_stretched(make_child, stub, work
 
 
 async def test_trusted_tier_accepts_a_cd_into_the_root_and_nothing_wider(make_child, stub, workdir):
-    """qwen38 wrapped every Atlas capture in `cd <root> && python3 atlas.py capture ...` (05d); that must run
+    """qwen38 wrapped every Atlas capture in `cd <root> && python3 atlas.py capture ...`; that must run
     without asking, and no other use of cd or chaining may ride along."""
     seen = []
     (workdir / "keep.txt").write_text("keep")

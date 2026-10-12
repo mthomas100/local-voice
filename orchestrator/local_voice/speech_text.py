@@ -11,7 +11,7 @@ NO = {"no", "nope", "nah", "don't", "do not", "stop", "cancel", "never mind", "n
       "negative", "not now", "skip it", "leave it", "wait"}
 _WORDS = re.compile(r"[a-z']+")
 
-# llama-swap streams its loading banner as reasoning_content while a model loads (14-20 s, note 05d)
+# llama-swap streams its loading banner as reasoning_content while a model loads (14-20 s)
 LOADING_BANNER = "llama-swap loading model"
 
 

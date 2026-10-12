@@ -1,6 +1,6 @@
 """Browser entry: SmallWebRTC with the project's own page, served by our own FastAPI app on 127.0.0.1.
 
-Why not the dev runner (note 04c §3): its `/start` hands the prebuilt client Google's STUN server
+Why not the dev runner: its `/start` hands the prebuilt client Google's STUN server
 (stun.l.google.com) and it has no TLS. Our `/start` returns no iceConfig, so the browser gathers host candidates
 only, which is all a page on this Mac (or a phone on the tailnet) needs; the bot side already passes iceServers=[].
 None of these routes is authenticated, so this app binds 127.0.0.1 only. Browsers grant the microphone on
@@ -8,7 +8,7 @@ http://localhost, so the Mac's own browser works today; a phone browser needs HT
 off by default).
 
 Echo cancellation comes from the browser (it applies AEC only inside a WebRTC call, PROTOCOL.md). UI events go as
-RTVI server messages; the "working" loop while a tool runs is the browser path's alone (note 04c §5).
+RTVI server messages; the "working" loop while a tool runs is the browser path's alone.
 
 The page at / is plain WebRTC (static/index.html). Pipecat's prebuilt client can be mounted at /client
 (server.browser.prebuilt), but it is off by default: when it loads it fetches Daily's call-machine bundle from

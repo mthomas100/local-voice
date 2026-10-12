@@ -1,20 +1,18 @@
-# 09c — mlx-audio 0.5.7: the API facts the voice agent depends on (read from source)
+# mlx-audio 0.5.7: the API facts the voice agent depends on (read from source)
 
-Written 2026-10-05 by the measurement agent. Every fact is read from source, with a file and line. Where the
-2026-10-05 08:45 run (report `09b-phase2-report.md`) exercised an API, its measurement is cited; nothing else was
-executed for this report.
+Every fact here is read from source, with a file and line (2026-10-05). Where the phase-2 benchmark
+([phase2.md](phase2.md)) exercised an API, its measurement is cited; nothing else was executed for these notes.
 
 **What was read.**
 
-- **mlx-audio 0.5.7** came from `pip download mlx-audio==0.5.7 --no-deps` into a scratch folder. The wheel is
-  `mlx_audio-0.5.7-py3-none-any.whl`, sha256 `2f2b3c66…c5123`, 827 Python files. It is byte-identical (`diff -rq`)
-  to the copy installed in `~/repos/local-decision/.venv`. Paths below are relative to `mlx_audio/`, and line
-  numbers are 0.5.7's.
-- **The clone** at `~/repos/mlx-audio` is "0.5.3" in this report: version 0.5.3 plus 21 commits (`ee0c65d`,
-  2026-09-11). It is what every phase-1 and phase-2 number used. `diff -rq` against 0.5.7, ignoring tests, READMEs
-  and the UI, finds 26 changed files and 4 new ones. "Same in the clone" below means the file is byte-identical.
-- **mlx-vlm 0.7.4** was read from `~/repos/local-decision/.venv` (`mlx_vlm/models/nemotron_voicechat/`), read-only,
-  because the VoiceChat checkpoint loads only there (section 8).
+- **mlx-audio 0.5.7**, from `pip download mlx-audio==0.5.7 --no-deps`. The wheel is
+  `mlx_audio-0.5.7-py3-none-any.whl`, sha256 `2f2b3c66…c5123`, 827 Python files. Paths below are relative to
+  `mlx_audio/`, and line numbers are 0.5.7's.
+- **The clone** that every phase-1 and phase-2 number used is called "0.5.3" here: version 0.5.3 plus 21 commits
+  (`ee0c65d`, 2026-09-11). `diff -rq` against 0.5.7, ignoring tests, READMEs and the UI, finds 26 changed files and 4
+  new ones. "Same in the clone" below means the file is byte-identical.
+- **mlx-vlm 0.7.4** (`mlx_vlm/models/nemotron_voicechat/`), because the VoiceChat checkpoint loads only there
+  (section 8).
 
 ## 0. What changed from the clone to 0.5.7, per component
 
@@ -59,7 +57,7 @@ executed for this report.
 
 **The server's defaults differ from the model's.** `SpeechRequest` (`server.py:168`) defaults to temperature 0.7,
 top_p 0.95, top_k 40, repetition_penalty 1.0, streaming_interval 2.0 and max_tokens 1200 (`:179-186`), and
-`run_serial` passes every one of them to `generate()` (`:636-653`). That is how phase 1 got a 0.6B run to the
+`run_serial` passes every one of them to `generate()` (`:636-653`). That is how phase 1 ([phase1.md](phase1.md) section 6) got a 0.6B run to the
 1200-frame cap with a minute of silence. Pass the model's values explicitly when going through the server.
 
 What a chunk is: `GenerationResult` (`tts/models/base.py:72-84`) carries `audio` (mx.array, mono, 24 kHz for
@@ -119,7 +117,7 @@ start.
 **Nothing in the API controls it.** No `generate()` argument trims or suppresses leading frames. The non-streaming
 path trims only the padded tail (`:2767-2773`), and the streaming path yields every frame. The server does no
 trimming either. `lang_code` changes the prefill and is the only input that plausibly shifts it; that is untested.
-Mitigations stay on the client: energy-gate or trim the first chunks (as `09-phase1-report.md` recommends), or use
+Mitigations stay on the client: energy-gate or trim the first chunks (as [phase1.md](phase1.md) section 7 recommends), or use
 the 1.7B, whose silence is 80 ms.
 
 ## 4. Parakeet STT on an in-memory array
@@ -137,7 +135,7 @@ the 1.7B, whose silence is 80 ms.
 - `stream=True` / `stream_generate` (`:293`) is chunked re-decoding of a complete buffer: 5 s chunks with 1 s overlap
   by default. It yields `StreamingResult(text, tokens, is_final, start_time, end_time, progress, audio_position,
   audio_duration, language)` (`:86-111`). It is not a live feed; Parakeet has no `create_streaming_session`.
-- Measured on this Mac: 0.023 s from a path and 0.025 s from a pre-loaded array for a 2.48 s clip (09b section 3).
+- Measured on this Mac: 0.023 s from a path and 0.025 s from a pre-loaded array for a 2.48 s clip (phase2.md section 3).
 
 ## 5. Nemotron ASR streaming session
 
@@ -164,7 +162,7 @@ producer thread; `step` must run on a single model executor. Construction may al
 realtime server drives it with `session.step(max_decode_tokens=8)` under one asyncio lock on the event-loop thread
 (`server.py:1665-1672`, `REALTIME_INFERENCE_LOCK` at `:213`).
 
-Measured on 2026-10-05 (09b section 3), feeding 320 ms chunks in real time: deltas arrive in bursts each time a
+Measured on 2026-10-05 (phase2.md section 3), feeding 320 ms chunks in real time: deltas arrive in bursts each time a
 1.12 s encoder chunk completes (`encoder_chunk_mel` 112 × hop 160), every 0.96 or 1.28 s of audio. After `close()`,
 the last deltas arrive 53–54 ms after the audio ends. `step(max_decode_tokens=8)` costs 0.2–2 ms when no encoder
 chunk completes and 31–56 ms when one does.
@@ -227,7 +225,7 @@ Load either with `mlx_audio.vad.utils.load_model(repo)` (`vad/utils.py`). Both a
   (`max_audio_seconds`, `config.py:27`), left-pads shorter input with zeros, and z-normalises if `normalize_audio`.
   It then computes a Whisper log-mel (`prepare_input_features`, `:203-229`). One call scores the end of the turn as it
   stands; there is no streaming state.
-- Measured on 2026-10-05 (09b section 4): Silero `feed` takes 0.4 ms per chunk (p50), and Smart Turn 1.3–1.7 ms per
+- Measured on 2026-10-05 (phase2.md section 4): Silero `feed` takes 0.4 ms per chunk (p50), and Smart Turn 1.3–1.7 ms per
   call. Smart Turn scored the 9.27 s two-sentence question incomplete (0.215) and the 2.48 s question complete (0.989).
 
 ## 8. VoiceChat's duplex session API
@@ -246,7 +244,7 @@ model card says `pip install -U mlx-vlm` and `mlx_vlm.load`.
   the snapshot.
 
 **API, mlx-vlm 0.7.4** (what the bench uses; on 2026-10-05 it loaded the 4-bit checkpoint in 7.2 s and ran 59.8 ms p50
-and 61.0 ms p95 per 80 ms frame, 09b section 6):
+and 61.0 ms p95 per 80 ms frame, phase2.md section 6):
 
 ```python
 from mlx_vlm import load

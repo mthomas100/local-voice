@@ -47,7 +47,7 @@ per user turn, when the turn is over: the agent settled, or the reply was interr
 SPACES.md), or saw the model capture them (the fallback path):
 
 ```json
-{"root": "~/atlas", "path": "journal/2026-10-04.md", "by": "orchestrator", "text": null}
+{"root": "~/journal", "path": "journal/2026-10-04.md", "by": "orchestrator", "text": null}
 ```
 
 - `root`: the Atlas root the capture ran in (absolute). The brain writes inbox pages only into the root its own config
@@ -61,9 +61,9 @@ SPACES.md), or saw the model capture them (the fallback path):
 Rules the brain relies on:
 
 - **Words are verbatim.** `user_text` and `atlas.text` are never cleaned, summarised or re-cased.
-- **Turns of the `atlas` space are life content.** The brain never sends them to the kb, and it reflects only on the
+- **Turns of the `atlas` space are life content.** The brain never sends them to the knowledge base, and it reflects only on the
   ones whose words are in Atlas (`atlas` set and found in the note). Anything the person says in other spaces is
-  treated as technical and may reach the kb's operational lane (`.sessions/digests/`), as kb.ts already does for
+  treated as technical and may reach the knowledge base's operational lane (`.sessions/digests/`), as kb.ts already does for
   every Pi session in those spaces.
 - **Activity.** The newest `t_end` (or `t_start`) is how the brain knows a conversation is recent; a turn in progress
   is not logged yet, so the brain also asks `GET /v1/status` (busy while `thinking` or `speaking`).

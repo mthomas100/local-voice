@@ -10,7 +10,7 @@ which no echo canceller can remove (its reference is long gone). So the check is
 mostly a stretch of what the agent said in the last few minutes is dropped before it becomes a turn.
 
 Matching is a local alignment of words (Smith-Waterman: equal words +2, a different word or a gap -1), so the
-recogniser's slips ("want a full breakdown" for "want the full breakdown?") and its own sentence breaks ("each. One.")
+recogniser's slips ("want a full rundown" for "want the full rundown?") and its own sentence breaks ("each bed's. Soil.")
 still match, while a few common words scattered over a long reply do not. A turn counts as echo when at least
 `min_words` of its words align and they are at least `min_share` of its words: the person quoting the agent inside
 their own question ("what do you mean by a compost heap layer?") keeps most of their words and is kept.

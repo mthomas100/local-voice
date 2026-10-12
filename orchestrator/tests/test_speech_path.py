@@ -11,7 +11,7 @@ from local_voice.speech_text import group_sentences, word_count
 
 
 def test_word_count():
-    assert word_count("I couldn't check — each one.") == 5
+    assert word_count("I haven't looked — each bed.") == 5
     assert word_count("") == 0
 
 

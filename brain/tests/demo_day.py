@@ -3,7 +3,7 @@
     uv run --project brain python brain/tests/demo_day.py [--keep]
 
 The world is temporary: the stub LLM (scripted with the replies in synth.py), real pi in JSON mode, a git clone of
-~/kb, a git clone of Atlas, and a fake gpu_clear.sh that says CLEAR. Nothing touches the real kb, Atlas, ~/.pi/agent
+the knowledge base (KB_HOME), a git clone of Atlas, and a fake gpu_clear.sh that says CLEAR. Nothing touches the real kb, Atlas, ~/.pi/agent
 or :8090. --keep leaves the temporary directory for inspection.
 """
 from __future__ import annotations

@@ -1,6 +1,6 @@
 """Browser entry: SmallWebRTC + the prebuilt client, served by our own FastAPI app instead of the dev runner.
 
-Construct-only skeleton (research note 04c). What the dev runner does (pipecat-ai 1.12.0, runner/run.py):
+Construct-only skeleton. What the dev runner does (pipecat-ai 1.12.0, runner/run.py):
 - `uv run bot.py -t webrtc` serves on --host (default localhost) and --port (default 7860)
   (run.py:187-188, 1714-1715) with plain uvicorn.run(app, host, port): there is no TLS option (run.py:2001).
 - Routes: GET / redirects to /client/ (the prebuilt UI, run.py:942-955); POST /start registers a session and
@@ -8,8 +8,8 @@ Construct-only skeleton (research note 04c). What the dev runner does (pipecat-a
   trickle ICE (run.py:1000-1036); /sessions/{session_id}/api/offer proxies the same, Pipecat-Cloud style
   (run.py:1038-1076). None of it is authenticated.
 - The prebuilt UI (pipecat-ai-prebuilt 1.3.0) posts /start with {"createDailyRoom": false,
-  "enableDefaultIceServers": true, "transport": "webrtc"} and waitForICEGathering: true
-  (raw/04c-pipecat-prebuilt-ui-start-params.md). With no --ice-servers the runner then hands the browser
+  "enableDefaultIceServers": true, "transport": "webrtc"} and waitForICEGathering: true.
+  With no --ice-servers the runner then hands the browser
   stun:stun.l.google.com:19302 (run.py:752-759), so the browser contacts Google's STUN server, which is not
   local. The /start below never returns iceConfig.
 - The bot side gathers host candidates only: SmallWebRTCConnection passes iceServers=[] (connection.py:

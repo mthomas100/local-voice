@@ -62,7 +62,7 @@ to resume. Nothing here calls the LLM or takes a hold. The neural scorers load o
 
 GPU time (plan, 2026-10-05): the default grid is 38 texts x 3 renders x 12 settings = 1,368 clips, 264 of them copies
 (one-sentence replies under the grouping settings), about 35 min of rendering plus 1 min of ASR on an idle Mac at the
-speeds measured in measure/09-phase1-report.md §3 (SPEED below). Kokoro is deterministic, so its three renders agree;
+speeds measured in measure/phase1.md §3 (SPEED below). Kokoro is deterministic, so its three renders agree;
 they cost 0.7 min. --reps 2: about 24 min. The score stage is CPU only but long: about 50 min for the default grid
 (the AudioSet tagger, 0.19 s per window in the 2026-10-05 CPU smoke), about 25 min with --tag-hop 1.0.
 
@@ -1229,7 +1229,7 @@ def write_report(run_dir: Path, *, llm_cps: float = LLM_CPS, budget_s: float = B
 
 # Per model: seconds of speech per character, real-time factor (compute / audio), load plus first-call warm-up, and the
 # silence it generates around each generation, as measured on this Mac (measure/raw/clean_tts_*.jsonl, 2026-10-04 22:01,
-# interval 0.32; 09-phase1-report.md §3): the 257- and 59-character texts took 1.7B 14.9-20.1 s and 3.7-5.0 s (lead
+# interval 0.32; measure/phase1.md §3): the 257- and 59-character texts took 1.7B 14.9-20.1 s and 3.7-5.0 s (lead
 # 0.08 s, tail 0.02-0.04, RTF 0.26-0.28), 0.6B 16.6-18.8 s and 4.8-6.6 s (lead 0.42, tail 0.44-0.48, RTF 0.20-0.22),
 # Kokoro 15.5 s and 3.9 s (lead 0.29, tail 0.45-0.48, RTF 0.02, first call 4.3 s).
 SPEED = {"Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice": (0.064, 0.27, 2.5, 0.15), QWEN_06B: (0.070, 0.215, 2.5, 0.9),

@@ -1,4 +1,4 @@
-// voice_gate.ts: the per-space risk gate from SPACES.md as a Pi extension (05c prototype, 2026-10-05).
+// voice_gate.ts: the per-space risk gate from SPACES.md as a Pi extension (prototype, 2026-10-05).
 //
 // Every tool call is allowed, asked about, or refused, by the space's tier (env, set per child):
 //   readonly  read-only tools run; anything else is refused without asking.
@@ -68,10 +68,10 @@ export function simpleHead(command: string): string | null {
 
 /** `cd <dir> && rest`, where <dir> is the space root or inside it, returns `rest`; anything else returns null.
  *  Models add this prefix even when the cwd already is the root: qwen38 wrapped every Atlas capture in
- *  `cd <atlas root> && python3 atlas.py capture ...` or `cd "$(pwd)" && ...` (05d, 2026-10-05), which the bare
+ *  `cd <atlas root> && python3 atlas.py capture ...` or `cd "$(pwd)" && ...` (seen in the voice brain test, 2026-10-05), which the bare
  *  check sent to a spoken confirmation on every musing. Only one leading cd is stripped; what follows gets the
  *  full check. */
-// `cd` to the current directory spelled the ways models spell it (qwen38 wrote `cd "$(pwd)" && ...`, 05d): exact
+// `cd` to the current directory spelled the ways models spell it (qwen38 wrote `cd "$(pwd)" && ...` in the voice brain test): exact
 // literal forms only, so no other expansion can ride along.
 const CD_HERE = /^\s*cd\s+(?:"\$\(pwd\)"|\$\(pwd\)|"\$PWD"|\$PWD|"\$\{PWD\}"|\$\{PWD\}|\.\/?)\s*&&\s*/;
 
@@ -127,7 +127,7 @@ export default function voiceGate(pi: ExtensionAPI) {
     if (v.action === "refuse") return { block: true, reason: v.reason, terminate: DENY_TERMINATES };
     if (!ctx.hasUI) return { block: true, reason: `${event.toolName} needs a yes and there is nobody to ask`, terminate: DENY_TERMINATES };
     // signal: an abort (the user barged in) dismisses the dialog at once. Without it the abort waits until the
-    // dialog times out, 20 s by default (05c E10).
+    // dialog times out, 20 s by default.
     const ok = await ctx.ui.confirm(v.title, v.message, { timeout: TIMEOUT_MS, signal: ctx.signal });
     if (ok) return undefined;
     return { block: true, reason: `The user did not approve this (said no, or did not answer within ${+(TIMEOUT_MS / 1000).toFixed(1)} s). Do not retry it; say you did not do it.`, terminate: DENY_TERMINATES };

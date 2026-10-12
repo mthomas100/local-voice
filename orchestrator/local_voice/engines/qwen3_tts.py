@@ -1,7 +1,7 @@
 """Qwen3-TTS CustomVoice through mlx-audio 0.5.7, streamed (the default voice: 1.7B, speaker Ryan).
 
 Measured here (../measure/): first chunk after 103 ms at streaming_interval 0.32, 0.08 s of leading silence, RTF 0.26-0.28,
-4.3 GiB active and 4.75 GiB peak while streaming. What the adapter does about the footguns (measure/09c §1-2):
+4.3 GiB active and 4.75 GiB peak while streaming. What the adapter does about the footguns (measure/mlx-audio-api.md §1-2):
 
 - `streaming_interval` is passed (default 2.0 costs 0.3-0.4 s of first audio); 0.32 s = 4 codec frames per chunk.
 - The model's own sampling is passed explicitly, with repetition_penalty >= 1.05: at 1.0 the 0.6B ran to the token

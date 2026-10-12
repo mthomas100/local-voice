@@ -1,8 +1,8 @@
 """Parakeet TDT 0.6B v3 through mlx-audio 0.5.7, one call per utterance (the alternative ears, kind: segmented).
 
-Measured here (09b §3): 23 ms for a 2.48 s clip, load about 1 s, 2.4 GiB of MLX memory. mlx-audio's Parakeet has no
+Measured here (measure/phase2.md §3): 23 ms for a 2.48 s clip, load about 1 s, 2.4 GiB of MLX memory. mlx-audio's Parakeet has no
 live session, so it runs once per VAD-delimited utterance. It takes an `mx.array` that is already mono float at
-16 kHz and never resamples an array; a NumPy array fails at its `astype(mx.bfloat16)` (09c §4).
+16 kHz and never resamples an array; a NumPy array fails at its `astype(mx.bfloat16)` (measure/mlx-audio-api.md §4).
 """
 from __future__ import annotations
 

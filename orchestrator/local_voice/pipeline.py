@@ -7,7 +7,7 @@
 are process-wide (runtime.py); everything here is per connection. The echo filter and the turn start that waits for
 words while the agent is busy come from config.yaml's echo: section (echo_guard.py, turn_start.py).
 
-Pipecat 1.12.0 settings that matter (notes 04b, 04c): empty_user_turn=None, or an interrupted turn without a
+Pipecat 1.12.0 settings that matter: empty_user_turn=None, or an interrupted turn without a
 transcript re-runs the agent with a "developer" note; idle_timeout_secs=None and cancel_runner_on_idle_timeout=False,
 or the default 300 s idle timeout cancels the worker and its runner; metrics on, or no latency breakdown; RTVI only
 for the browser (its processor swallows other control messages).
@@ -107,7 +107,7 @@ class InOrderTextProcessor(LLMTextProcessor):
 
 
 def code_fence_splitter() -> LLMTextProcessor:
-    """Fenced code becomes its own "code" aggregation, which the TTS skips and the record keeps (note 04c §1)."""
+    """Fenced code becomes its own "code" aggregation, which the TTS skips and the record keeps."""
     return InOrderTextProcessor(
         text_aggregator=PatternPairAggregator().add_pattern("code", "```", "```", action=MatchAction.AGGREGATE))
 

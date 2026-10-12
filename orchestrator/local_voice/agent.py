@@ -1,21 +1,21 @@
 """The agent behind the voice: Pi over RPC, one child per space, fronted by a Pipecat "LLM" service.
 
-AgentHub is process-wide: the space pool (05c's SpacePool), the active space and mode, one turn at a time per Pi
+AgentHub is process-wide: the space pool (the prototype's SpacePool), the active space and mode, one turn at a time per Pi
 child, and what /v1/status shows. PiAgentService is one per pipeline (per connection).
 
-How a turn maps onto Pipecat 1.12.0 and Pi 0.99.1 (notes 04c §1, 05c, 05d):
+How a turn maps onto Pipecat 1.12.0 and Pi 0.99.1:
 - The user aggregator pushes an LLMContextFrame holding the whole Pipecat context; only user messages not sent
   before go to Pi (tracked by object identity), so a re-pushed context never re-prompts it.
 - The Pi turn runs in its own task, not the frame-processing task. Pipecat cancels the processing task on every
   InterruptionFrame; a separate task lets the service decide: barge-in cancels the turn (the bridge then aborts Pi in
   the background, never inline, because Pipecat waits at most 1 s), while the person answering a spoken permission
   question must not abort the run that is waiting for that answer.
-- Text deltas become LLMTextFrames; thinking deltas are never spoken (05d), but llama-swap's loading banner, which
+- Text deltas become LLMTextFrames; thinking deltas are never spoken, but llama-swap's loading banner, which
   arrives as thinking, is a cue to say the model is waking up.
 - A tool call is acknowledged at toolcall_start with a canned phrase spoken by the orchestrator (append_to_context
   False, so it stays out of the record) and shown to clients as a `tool` message.
 - What the person heard of an interrupted reply (the assistant aggregator's spoken sentences, refined by the
-  client's played_ms) prefixes the next prompt; Pi itself drops the aborted partial reply (05c E3a).
+  client's played_ms) prefixes the next prompt; Pi itself drops the aborted partial reply.
 - A barge-in while the model is still writing its reply stops the speech but not the run (when no tool call is
   pending and the reply is short): the run finishes silently and stays in Pi's context, and the next prompt waits for
   it. An aborted run leaves ds4 a request that no longer extends its recurrent state, and ds4 then replays the
@@ -495,7 +495,7 @@ class PiAgentService(LLMService):
         self._busy_since = time.monotonic()
         if self._confirm is not None:
             # The person is answering the spoken question; their words arrive as the next transcript. Pipecat
-            # broadcasts an interruption at every user turn start (note 04c §2), and this one must not abort the run.
+            # broadcasts an interruption at every user turn start, and this one must not abort the run.
             self._skip_heard_once = True
             return
         task, st = self._turn_task, self._turn_state
@@ -758,7 +758,7 @@ class PiAgentService(LLMService):
                         if self._ack_when(ev.name, space) == "now":
                             await say_ack(ev.name)
                     elif isinstance(ev, ToolStart):
-                        # comes after toolcall_start, with the arguments, and before any permission question (05c E4)
+                        # comes after toolcall_start, with the arguments, and before any permission question
                         if ev.name == "kb" and str(((ev.args or {}).get("args") or [""])[0]) in KB_READ_VERBS:
                             await say_ack(ev.name)     # a lookup; a kb verb that writes is asked about instead
                         # a capture the model runs itself is noted for the turn log (TURN_LOG.md: by "model")
@@ -783,7 +783,7 @@ class PiAgentService(LLMService):
                         await child.cancel_ui(ev.id)   # no spoken form for these; cancelling answers at once
                     elif isinstance(ev, Notify):
                         if "held" in ev.message.lower() and self.on_pi_waiting:
-                            await self.on_pi_waiting(ev.message)   # hold.ts waits inside the run (05c E5c)
+                            await self.on_pi_waiting(ev.message)   # hold.ts waits inside the run
                     elif isinstance(ev, Status):
                         pass
                     elif isinstance(ev, MessageEnd) and ev.role == "assistant":
@@ -860,7 +860,7 @@ class PiAgentService(LLMService):
     async def _capture(self, child: PiChild, space: str, text: str, note_next: bool = False) -> tuple[str, bool]:
         """Atlas (SPACES.md): a musing is saved word for word with `atlas.py capture --via voice` through Pi's RPC bash,
         kept out of the model's context, before the reply; the model is told it is saved. Deterministic and
-        byte-exact (05c, 05d), where the model alone did not reliably capture first. Returns the prompt, and whether
+        byte-exact in the prototype and the voice brain test, where the model alone did not reliably capture first. Returns the prompt, and whether
         the words were saved. note_next: the person said "note this" on its own just before, so all of this
         utterance is the musing."""
         hub = self._hub
